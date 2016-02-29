@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
     for (i = 0; i < samples; i++)
          data[i] = (double *)malloc(dimensions * sizeof(double));
 
+    //Reading in coordinates to 2D array
     double buffer;
     for (i = 0; i < samples; i++) {
     	for (j = 0; j < dimensions; j++) {
@@ -54,6 +55,21 @@ int main(int argc, char* argv[]) {
     		//printf("%lf ", data[i][j]);
     	}
     }
+
+    //Creating clusterInfo to store coordinates of each cluster
+    double **clusterInfo = (double **)malloc(K * sizeof(double *));
+    for (i = 0; i < K; i++)
+         clusterInfo[i] = (double *)malloc(dimensions * sizeof(double));
+
+    //2. Seting initial cluster coordinates as coordinates of sample 1, 2, 3, ... +
+    for (i = 0; i < K; i++) {
+		for (j = 0; j < dimensions; j++) {
+			clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
+			printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
 
 
 
