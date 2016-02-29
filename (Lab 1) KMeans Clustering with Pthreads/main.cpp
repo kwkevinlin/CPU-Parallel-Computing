@@ -1,37 +1,81 @@
-#include <iostream>
-#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "etime.h"
 
-using namespace std;
 
-int main() {
+int thread_count;
+
+void *Hello (void* rank);
+
+int main(int argc, char* argv[]) {
 
 	/*
-	 * Each file has the
-following format: On the top line is the number of samples S followed by the number of features per
-sample F. The rest of the file is S rows of F values, where each value is a real number between 0
-and 1, with each value in the file separated by a space. As an example, an input data file with 4
-samples of 2 features each would look like this:
-	 *
-	 *  kmeans K 			P 		  inputFile outputFile
-	 *  	   numClusters  Processors
-	 */
+		./kmeans K 			  P 		  inputFile outputFile
+	    	     numClusters  Processors
 
-	//Run using 3 clusters
+	*/
 
-	int K = 3, samples, dimensions;
-	float n;
+	int K, processors;
+	FILE *inputFile, *outputFile;
 
-	ifstream infile("kmeansSmall.txt");
-	infile >> samples >> dimensions;
-
-	float data[samples][dimensions];
-
-	for (int i = 0; i < samples; i++) {
-		infile >> n;
-		data[i][0] = n;
-		infile >> n;
-		data[i][1] = n;
-		cout << data[i][0] << ", " << data[i][1] << endl;
+	if (argc != 5) {
+		printf("%i\n", argc);
+		printf("Incorrect parameters.\n");
+		exit(0);
+	} else {
+		K = strtol(argv[1], NULL, 10);
+		processors = strtol(argv[2], NULL, 10);
+		inputFile = fopen(argv[3], "r");
+		outputFile = fopen("output.txt", "w+");
 	}
+	
+	printf("Threads: %i, Processors: %i\n", K, processors);
+
+
+	//Reading in data to dynamic array
+	int samples, dimensions;
+	fscanf(inputFile, "%i", &samples);
+	fscanf(inputFile, "%i", &dimensions);
+	printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
+
+	//while(fgets(line, 80, fr) != NULL) {
+
+
+	//}
+
+
+
+
+
+	long thread;
+	pthread_t* thread_handles;
+
+	thread_count = strtol(argv[1], NULL, 10);
+
+	thread_handles = malloc(thread_count*sizeof(pthread_t));
+
+	for (thread = 0; thread < thread_count; thread++) {
+		pthread_create(&thread_handles[thread], NULL, Hello, (void*) thread);
+	}
+
+	printf("Hello from main thread\n");
+
+	for (thread = 0; thread < thread_count; thread++) {
+		pthread_join(thread_handles[thread], NULL);
+	}
+
+	free(thread_handles);
+
+	return 0;
+
+}
+
+void *Hello(void* rank) {
+	long my_rank = (long) rank;
+
+	printf("Thread %ld of %d\n", my_rank, thread_count);
+
+	return NULL;
 
 }
