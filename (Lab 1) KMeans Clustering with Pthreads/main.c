@@ -39,10 +39,23 @@ int main(int argc, char* argv[]) {
 	fscanf(inputFile, "%i", &dimensions);
 	printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
 
-	//while(fgets(line, 80, fr) != NULL) {
+	int i, j;
+
+	//Creating data[samples][dimensions]
+	double **data = (double **)malloc(samples * sizeof(double *));
+    for (i = 0; i < samples; i++)
+         data[i] = (double *)malloc(dimensions * sizeof(double));
+
+    double buffer;
+    for (i = 0; i < samples; i++) {
+    	for (j = 0; j < dimensions; j++) {
+    		fscanf(inputFile, "%lf", &buffer);
+    		data[i][j] = buffer;
+    		//printf("%lf ", data[i][j]);
+    	}
+    }
 
 
-	//}
 
 
 
@@ -59,7 +72,7 @@ int main(int argc, char* argv[]) {
 		pthread_create(&thread_handles[thread], NULL, Hello, (void*) thread);
 	}
 
-	printf("Hello from main thread\n");
+	printf("\nHello from main thread\n");
 
 	for (thread = 0; thread < thread_count; thread++) {
 		pthread_join(thread_handles[thread], NULL);
