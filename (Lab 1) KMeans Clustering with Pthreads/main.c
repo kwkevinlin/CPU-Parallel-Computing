@@ -125,21 +125,32 @@ int main(int argc, char* argv[]) {
 
 		//4. Move the center of each cluster to be in the middle of the elements that are assigned to that cluster.
 		//Get average of coordinates. x+x+x/n, y+y+y/n
+		//memset(clusterInfo, 0, sizeof(double) * K * dimensions);
+
+		for (i = 0; i < K; i++) {
+			for (j = 0; j < dimensions; j++) {
+				clusterInfo[i][j] = 0;
+			}
+		}
+
+
 		for (i = 0; i < K; i++) { //Per Cluster
 			printf("Cluster %i (avg): ", i);
 			for (j = 0; j < samples; j++) { //For each sample in each cluster
 				for (y = 0; y < dimensions; y++) { //Per dimension
-					if (dataClusterIndex[j] == i) { //If sample belongs in this cluster
-						storageDim[y] = storageDim[y] + data[j][y]; //Get all of dim, ex: x+x+x
+
+					//If data belongs in current cluster
+					if (dataClusterIndex[j] == i) { //if belong in cluster 0
+						clusterInfo[dataClusterIndex[j]][y] = clusterInfo[dataClusterIndex[j]][y] + data[j][y];
 					}
+					
 				}
 			}
 
 			//After getting sum, divide by number of samples in the cluster
-			for (y = 0; y < dimensions; y++) { //Per dimension
-				clusterInfo[i][y] = storageDim[y] / (double)clusterElements[i]; //New average coordinates stored here
+			for (y = 0; y < 2; y++) {
+				clusterInfo[i][y] = clusterInfo[i][y] / (double) clusterElements[i];
 				printf("%lf ", clusterInfo[i][y]);
-				storageDim[y] = 0;
 			}
 			printf("\n");
 		}
