@@ -23,6 +23,9 @@ int main() {
 	 *
 	 *  Note: Arrays and loops are way too nested
 	 *
+	 *	Improvements: Instead of rewriting each cluster, create index variable for each sample that keeps track of what
+	 *				  cluster it currently belongs to.
+	 *
 	 *  Test inputs:
 	 *  	K = 3, filename: kmeansSmall.txt
 	 *  	K = 2, filename: testInputs1.txt
