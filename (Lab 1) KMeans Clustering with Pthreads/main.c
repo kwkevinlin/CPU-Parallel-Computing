@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h> //memset
+#include <math.h>
 #include "etime.h"
 
 
@@ -39,7 +41,8 @@ int main(int argc, char* argv[]) {
 	fscanf(inputFile, "%i", &dimensions);
 	printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
 
-	int i, j;
+	//For all loops
+	int i, j, y, z;
 
 	//Creating data[samples][dimensions]
 	double **data = (double **)malloc(samples * sizeof(double *));
@@ -61,7 +64,10 @@ int main(int argc, char* argv[]) {
     for (i = 0; i < K; i++)
          clusterInfo[i] = (double *)malloc(dimensions * sizeof(double));
 
-    //2. Seting initial cluster coordinates as coordinates of sample 1, 2, 3, ... +
+    //Creating dataClusterIndex to map samples to corresponding cluster
+    int *dataClusterIndex = (int *)malloc(samples * sizeof(int));
+
+    //2. Seting initial cluster coordinates as coordinates of sample 1, 2, .. K
     for (i = 0; i < K; i++) {
 		for (j = 0; j < dimensions; j++) {
 			clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
@@ -71,12 +77,61 @@ int main(int argc, char* argv[]) {
 	}
 	printf("\n");
 
+	//Variable declarations for step 3 below
+	double dist, minDist = 100000;
+	int minCluster;
+	//int clusterIndex[K] = {0}; //Index to imitate stack in array
+	//For step 4
+	double storageDim[dimensions];
+	memset(storageDim, 0, sizeof(dimensions));
+
+	/*==========================================================================
+		Major loop starts here
+	*/
+	for (z = 0; z < 1; z++) { //Repeat process for a maximum of 100 iterations
+
+		//3. For each element in your data, assign it to the cluster it's closest to.
+		for (i = 0; i < samples; i++) { //Per sample
+			for (j = 0; j < K; j++) { // Per cluster
+				double calcKMeansBuffer = 0;
+				for (y = 0; y < dimensions; y++) { //Arbitrary dimensions
+
+					calcKMeansBuffer = calcKMeansBuffer + pow((clusterInfo[j][y] - data[i][y]), 2);
+				
+				}
+				dist = sqrt(calcKMeansBuffer);
+
+				if (dist < minDist) {
+					minDist = dist;
+					dataClusterIndex[i] = j;
+				}
+			}
+			printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
+			minDist = 100000;
+			//Update closest cluster array
+			/*
+			for (int y = 0; y < dimensions; y++) {
+				clusters[minCluster][clusterIndex[minCluster]][y] = data[i][y];
+				clusters[minCluster][clusterIndex[minCluster]][y] = data[i][y];
+			}
+			clusterIndex[minCluster]++;
+			*/
+		}
+
+		
 
 
 
 
 
 
+	} //End major loop
+
+
+
+
+
+	//Reference code for pThreads
 	long thread;
 	pthread_t* thread_handles;
 
