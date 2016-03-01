@@ -5,10 +5,9 @@
 #include <math.h>
 #include "etime.h"
 
-
 int thread_count;
 
-void *Hello (void* rank);
+//void *Hello (void* rank);
 
 int main(int argc, char* argv[]) {
 
@@ -29,7 +28,7 @@ int main(int argc, char* argv[]) {
 		K = strtol(argv[1], NULL, 10);
 		processors = strtol(argv[2], NULL, 10);
 		inputFile = fopen(argv[3], "r");
-		outputFile = fopen("output.txt", "w+");
+		outputFile = fopen(argv[4], "w+");
 	}
 	
 	printf("Threads: %i, Processors: %i\n", K, processors);
@@ -55,7 +54,6 @@ int main(int argc, char* argv[]) {
     	for (j = 0; j < dimensions; j++) {
     		fscanf(inputFile, "%lf", &buffer);
     		data[i][j] = buffer;
-    		//printf("%lf ", data[i][j]);
     	}
     }
 
@@ -78,19 +76,23 @@ int main(int argc, char* argv[]) {
 	printf("\n");
 
 	//Variable declarations for step 3 below
-	double dist, minDist = 100000;
-	int minCluster;
-	//int clusterIndex[K] = {0}; //Index to imitate stack in array
+	double dist, minDist = 1000000;
 	//For step 4
 	int clusterElements[K];
-	memset(clusterElements, 0, sizeof(clusterElements));
+	//memset(clusterElements, 0, sizeof(clusterElements));
+	for (i = 0; i < K; i++) {
+		clusterElements[i] = 0;
+	}
 
 	/*==========================================================================
 		Major loop starts here
 	*/
-	for (z = 0; z < 5; z++) { //Repeat process for a maximum of 100 iterations
+	for (z = 0; z < 10; z++) { //Repeat process for a maximum of 100 iterations
 
-		memset(clusterElements, 0, sizeof(clusterElements));
+		//memset(clusterElements, 0, sizeof(clusterElements));
+		for (i = 0; i < K; i++) {
+			clusterElements[i] = 0;
+		}
 
 		//3. For each element in your data, assign it to the cluster it's closest to.
 		for (i = 0; i < samples; i++) { //Per sample
@@ -110,7 +112,7 @@ int main(int argc, char* argv[]) {
 			}
 			printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
 			clusterElements[dataClusterIndex[i]]++;
-			minDist = 100000;
+			minDist = 1000000;
 		}
 
 		
@@ -138,7 +140,7 @@ int main(int argc, char* argv[]) {
 			}
 
 			//After getting sum, divide by number of samples in the cluster
-			for (y = 0; y < 2; y++) {
+			for (y = 0; y < dimensions; y++) {
 				clusterInfo[i][y] = clusterInfo[i][y] / (double) clusterElements[i];
 				printf("%lf ", clusterInfo[i][y]);
 			}
@@ -150,9 +152,7 @@ int main(int argc, char* argv[]) {
 	} //End major loop
 
 
-
-
-
+	/*
 	//Reference code for pThreads
 	long thread;
 	pthread_t* thread_handles;
@@ -172,11 +172,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	free(thread_handles);
-
+	*/
 	return 0;
 
 }
 
+/*
 void *Hello(void* rank) {
 	long my_rank = (long) rank;
 
@@ -185,3 +186,4 @@ void *Hello(void* rank) {
 	return NULL;
 
 }
+*/
