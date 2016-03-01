@@ -43,12 +43,20 @@ int main(int argc, char* argv[]) {
 	//For all loops
 	int i, j, y, z;
 
-	//Creating data[samples][dimensions]
-	double **data = (double **)malloc(samples * sizeof(double *));
-    for (i = 0; i < samples; i++)
-         data[i] = (double *)malloc(dimensions * sizeof(double));
+	//Creating dataClusterIndex to map samples to corresponding cluster
+    int *dataClusterIndex = (int *)malloc(samples * sizeof(int));
 
-    //Reading in coordinates to 2D array
+    //Secondary dataClusterIndex to check if clusters are still relocating
+    int *prevDataCluster = (int *)malloc(samples * sizeof(int));
+
+	//Creating data[samples][dimensions] array to store samples its coordinates
+	double **data = (double **)malloc(samples * sizeof(double *));
+    for (i = 0; i < samples; i++) {
+         data[i] = (double *)malloc(dimensions * sizeof(double));
+         prevDataCluster[i] = 0;
+     }
+
+    //Reading in coordinates to array of arbitrary dimension
     double buffer;
     for (i = 0; i < samples; i++) {
     	for (j = 0; j < dimensions; j++) {
@@ -62,34 +70,27 @@ int main(int argc, char* argv[]) {
     for (i = 0; i < K; i++)
          clusterInfo[i] = (double *)malloc(dimensions * sizeof(double));
 
-    //Creating dataClusterIndex to map samples to corresponding cluster
-    int *dataClusterIndex = (int *)malloc(samples * sizeof(int));
-
     //2. Seting initial cluster coordinates as coordinates of sample 1, 2, .. K
     for (i = 0; i < K; i++) {
 		for (j = 0; j < dimensions; j++) {
 			clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
-			printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
+			//printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
 		}
-		printf("\n");
+		//printf("\n");
 	}
-	printf("\n");
+	//printf("\n");
 
 	//Variable declarations for step 3 below
 	double dist, minDist = 1000000;
 	//For step 4
 	int clusterElements[K];
-	//memset(clusterElements, 0, sizeof(clusterElements));
-	for (i = 0; i < K; i++) {
-		clusterElements[i] = 0;
-	}
 
 	/*==========================================================================
 		Major loop starts here
 	*/
-	for (z = 0; z < 10; z++) { //Repeat process for a maximum of 100 iterations
+	int flag1 = 0, flag2 = 0;
+	for (z = 0; z < 100; z++) { //Repeat process for a maximum of 100 iterations
 
-		//memset(clusterElements, 0, sizeof(clusterElements));
 		for (i = 0; i < K; i++) {
 			clusterElements[i] = 0;
 		}
@@ -110,7 +111,17 @@ int main(int argc, char* argv[]) {
 					dataClusterIndex[i] = j;
 				}
 			}
-			printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
+			//Stop loop if no samples relocate clusters
+			if (dataClusterIndex[i] == prevDataCluster[i]) {
+				flag1 = 1; flag2 = 1;
+			}
+			else {
+				flag2 = 0;
+			}
+			//Update prev for next iteration
+			prevDataCluster[i] = dataClusterIndex[i];
+
+			//printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
 			clusterElements[dataClusterIndex[i]]++;
 			minDist = 1000000;
 		}
@@ -118,7 +129,7 @@ int main(int argc, char* argv[]) {
 		
 		//memset(clusterInfo, 0, sizeof(double) * K * dimensions);
 		for (i = 0; i < K; i++) {
-			printf("Cluster %i contains: %i elements\n", K, clusterElements[i]);
+			//printf("Cluster %i contains: %i elements\n", K, clusterElements[i]);
 			for (j = 0; j < dimensions; j++) {
 				clusterInfo[i][j] = 0;
 			}
@@ -127,12 +138,12 @@ int main(int argc, char* argv[]) {
 		//4. Move the center of each cluster to be in the middle of the elements that are assigned to that cluster.
 		//Get average of coordinates. x+x+x/n, y+y+y/n
 		for (i = 0; i < K; i++) { //Per Cluster
-			printf("Cluster %i (avg): ", i);
+			//printf("Cluster %i (avg): ", i);
 			for (j = 0; j < samples; j++) { //For each sample in each cluster
 				for (y = 0; y < dimensions; y++) { //Per dimension
 
 					//If data belongs in current cluster
-					if (dataClusterIndex[j] == i) { //if belong in cluster 0
+					if (dataClusterIndex[j] == i) {
 						clusterInfo[dataClusterIndex[j]][y] = clusterInfo[dataClusterIndex[j]][y] + data[j][y];
 					}
 					
@@ -142,15 +153,30 @@ int main(int argc, char* argv[]) {
 			//After getting sum, divide by number of samples in the cluster
 			for (y = 0; y < dimensions; y++) {
 				clusterInfo[i][y] = clusterInfo[i][y] / (double) clusterElements[i];
-				printf("%lf ", clusterInfo[i][y]);
+				//printf("%lf ", clusterInfo[i][y]);
 			}
-			printf("\n");
+			//printf("\n");
 		}
 
 		printf("//=========== Loop %i ===========//\n", z + 1);
 
+		//If no samples relocate, kmeans clustering is done
+		if ((flag1 & flag2) == 1) {
+			break;
+		} else {
+			flag1 = 0;
+			flag2 = 0;
+		}
+
 	} //End major loop
 
+	printf("Complete!\n");
+	
+	//Output results to 'argv[4]'.txt
+	fprintf(outputFile, "%i\n", samples);
+	for (i = 0; i < samples; i++) {
+		fprintf(outputFile, "%i\n", dataClusterIndex[i]);
+	}
 
 	/*
 	//Reference code for pThreads
