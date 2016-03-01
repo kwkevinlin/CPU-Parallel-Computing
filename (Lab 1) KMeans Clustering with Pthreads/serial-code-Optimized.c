@@ -7,7 +7,8 @@
 int thread_count;
 
 /*
-	Parallel code using PThreads and arbitrary dimensions
+	Most Turkett arrays/variables are global
+	
 */
 
 //void *Hello (void* rank);
