@@ -4,13 +4,22 @@
 #include <math.h>
 #include "etime.h"
 
-int thread_count;
-
 /*
 	Parallel code using PThreads and arbitrary dimensions
 */
 
-//void *Hello (void* rank);
+int K, processors, samples, dimensions, thread_count, flag = 1;
+int i, j, y, z; //For all loops
+double dist, calcKMeansBuffer, minDist = 1000000; //For step 3
+
+pthread_mutex_t mutex;
+int *dataClusterIndex; //Creating dataClusterIndex to map samples to corresponding cluster
+int *prevDataCluster; //Secondary dataClusterIndex to check if clusters are still relocating
+double **data; //Creating data[samples][dimensions] array to store samples its coordinates
+double **clusterInfo; //Creating clusterInfo to store coordinates of each cluster
+
+
+void *kMeans (void* rank);
 
 int main(int argc, char* argv[]) {
 
@@ -20,7 +29,6 @@ int main(int argc, char* argv[]) {
 
 	*/
 
-	int K, processors;
 	FILE *inputFile, *outputFile;
 
 	if (argc != 5) {
@@ -35,28 +43,29 @@ int main(int argc, char* argv[]) {
 	
 	printf("Clusters: %i, Processors: %i\n", K, processors);
 
+	//PThreads setup
+	long       thread;  /* Use long in case of a 64-bit system */
+   	pthread_t* thread_handles;
+   	thread_handles = (pthread_t*) malloc (thread_count*sizeof(pthread_t)); 
+   	pthread_mutex_init(&mutex, NULL);
 
-	//Reading in data to dynamic array
-	int samples, dimensions;
+   	//Reading in data to dynamic array
 	fscanf(inputFile, "%i", &samples);
 	fscanf(inputFile, "%i", &dimensions);
 	printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
 
-	//For all loops
-	int i, j, y, z;
+   	//Initializing all globals
+   	dataClusterIndex = (int *)malloc(samples * sizeof(int));
+   	prevDataCluster = (int *)malloc(samples * sizeof(int));
+   	data = (double **)malloc(samples * sizeof(double *));
+   	clusterInfo = (double **)malloc(K * sizeof(double *));
+   	int clusterElements[K]; //For step 4
 
-	//Creating dataClusterIndex to map samples to corresponding cluster
-    int *dataClusterIndex = (int *)malloc(samples * sizeof(int));
-
-    //Secondary dataClusterIndex to check if clusters are still relocating
-    int *prevDataCluster = (int *)malloc(samples * sizeof(int));
-
-	//Creating data[samples][dimensions] array to store samples its coordinates
-	double **data = (double **)malloc(samples * sizeof(double *));
+	//Continue allocating 2nd dimensions to data[samples][dimensions]
     for (i = 0; i < samples; i++) {
          data[i] = (double *)malloc(dimensions * sizeof(double));
          prevDataCluster[i] = 0;
-     }
+    }
 
     //Reading in coordinates to array of arbitrary dimension
     double buffer;
@@ -67,8 +76,7 @@ int main(int argc, char* argv[]) {
     	}
     }
 
-    //Creating clusterInfo to store coordinates of each cluster
-    double **clusterInfo = (double **)malloc(K * sizeof(double *));
+    //Continue allocating 2nd dimension to clusterInfo[K][dimensions]
     for (i = 0; i < K; i++)
          clusterInfo[i] = (double *)malloc(dimensions * sizeof(double));
 
@@ -82,16 +90,21 @@ int main(int argc, char* argv[]) {
 	}
 	//printf("\n");
 
-	//Variable declarations for step 3 below
-	double dist, minDist = 1000000;
-	//For step 4
-	int clusterElements[K];
-
 	/*==========================================================================
 		Major loop starts here
 	*/
-	int flag = 1;
 	for (z = 0; z < 100; z++) { //Repeat process for a maximum of 100 iterations
+
+		//==============================================================
+		/*
+		for (thread = 0; thread < thread_count; thread++)  
+			pthread_create(&thread_handles[thread], NULL, kMeans, (void*)thread);  
+
+		for (thread = 0; thread < thread_count; thread++) 
+			pthread_join(thread_handles[thread], NULL); 
+		*/
+		//==============================================================
+
 
 		for (i = 0; i < K; i++) {
 			clusterElements[i] = 0;
@@ -100,7 +113,7 @@ int main(int argc, char* argv[]) {
 		//3. For each element in your data, assign it to the cluster it's closest to.
 		for (i = 0; i < samples; i++) { //Per sample
 			for (j = 0; j < K; j++) { // Per cluster
-				double calcKMeansBuffer = 0;
+				calcKMeansBuffer = 0;
 				for (y = 0; y < dimensions; y++) { //Arbitrary dimensions
 
 					calcKMeansBuffer = calcKMeansBuffer + pow((clusterInfo[j][y] - data[i][y]), 2);
@@ -201,8 +214,7 @@ int main(int argc, char* argv[]) {
 
 }
 
-/*
-void *Hello(void* rank) {
+void *kMeans(void* rank) {
 	long my_rank = (long) rank;
 
 	printf("Thread %ld of %d\n", my_rank, thread_count);
@@ -210,4 +222,3 @@ void *Hello(void* rank) {
 	return NULL;
 
 }
-*/
