@@ -39,12 +39,6 @@ int main(int argc, char* argv[]) {
 	
 	printf("Clusters: %i, Processors: %ld\n", K, thread_count);
 
-	//PThreads setup
-	long       thread;  /* Use long in case of a 64-bit system */
-   	pthread_t* thread_handles;
-   	thread_handles = (pthread_t*) malloc (thread_count*sizeof(pthread_t)); 
-   	pthread_mutex_init(&mutex, NULL);
-
    	//Reading in data to dynamic array
 	fscanf(inputFile, "%i", &samples);
 	fscanf(inputFile, "%i", &dimensions);
@@ -85,6 +79,12 @@ int main(int argc, char* argv[]) {
 		//printf("\n");
 	}
 	//printf("\n");
+
+	//PThreads setup
+	long       thread;  /* Use long in case of a 64-bit system */
+   	pthread_t* thread_handles;
+   	thread_handles = (pthread_t*) malloc (thread_count*sizeof(pthread_t)); 
+   	pthread_mutex_init(&mutex, NULL);
 
 	/*==========================================================================
 		Major loop starts here
@@ -185,27 +185,7 @@ int main(int argc, char* argv[]) {
 		fprintf(outputFile, "%i\n", dataClusterIndex[i]);
 	}
 
-	/*
-	//Reference code for pThreads
-	long thread;
-	pthread_t* thread_handles;
 
-	thread_count = strtol(argv[1], NULL, 10);
-
-	thread_handles = malloc(thread_count*sizeof(pthread_t));
-
-	for (thread = 0; thread < thread_count; thread++) {
-		pthread_create(&thread_handles[thread], NULL, Hello, (void*) thread);
-	}
-
-	printf("\nHello from main thread\n");
-
-	for (thread = 0; thread < thread_count; thread++) {
-		pthread_join(thread_handles[thread], NULL);
-	}
-
-	free(thread_handles);
-	*/
 	return 0;
 
 }
@@ -213,14 +193,24 @@ int main(int argc, char* argv[]) {
 void *kMeans(void* rank) {
 	long my_rank = (long) rank;
 
-	long chunk_size = N / thread_count;
-	long start = rank * chunk_size;
-	long end = (rank + 1) * chunk_size - 1;
+	long chunk_size = samples / thread_count; //N
+	long start = my_rank * chunk_size;
+	long end = (my_rank + 1) * chunk_size - 1;
 
-	//Prevent out of bounds
-	if (rank == (thread_count - 1))
-		end = N;
-	
+	//Last one deals with the rest
+	if (my_rank == (thread_count - 1))
+		end = samples;
+	/*
+	Possibly a bit uneven distribution here. Ie: 12 samples, 5 threads:
+		Thread 0: 0 - 1
+		Thread 1: 2 - 3
+		Thread 2: 4 - 5
+		Thread 3: 6 - 7
+		Thread 4: 8, 9, 10, 11 (two extra)
+	*/
+
+	printf("Thread %li, Start: %li, End: %li\n", my_rank, start, end);
+
 
 
 	//printf("Thread %ld of %ld\n", my_rank, thread_count);
