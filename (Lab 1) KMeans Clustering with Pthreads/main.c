@@ -8,7 +8,8 @@
 	Parallel code using PThreads and arbitrary dimensions
 */
 
-int K, processors, samples, dimensions, thread_count, flag = 1;
+long thread_count;
+int K, samples, dimensions, flag = 1;
 int i, j, y, z; //For all loops
 double dist, calcKMeansBuffer, minDist = 1000000; //For step 3
 
@@ -23,11 +24,6 @@ void *kMeans (void* rank);
 
 int main(int argc, char* argv[]) {
 
-	/*
-		./kmeans K 			  P 		  inputFile outputFile
-	    	     numClusters  Processors
-
-	*/
 
 	FILE *inputFile, *outputFile;
 
@@ -36,12 +32,12 @@ int main(int argc, char* argv[]) {
 		exit(0);
 	} else {
 		K = strtol(argv[1], NULL, 10);
-		processors = strtol(argv[2], NULL, 10);
+		thread_count = strtol(argv[2], NULL, 10);
 		inputFile = fopen(argv[3], "r");
 		outputFile = fopen(argv[4], "w+");
 	}
 	
-	printf("Clusters: %i, Processors: %i\n", K, processors);
+	printf("Clusters: %i, Processors: %ld\n", K, thread_count);
 
 	//PThreads setup
 	long       thread;  /* Use long in case of a 64-bit system */
@@ -96,13 +92,13 @@ int main(int argc, char* argv[]) {
 	for (z = 0; z < 100; z++) { //Repeat process for a maximum of 100 iterations
 
 		//==============================================================
-		/*
+		
 		for (thread = 0; thread < thread_count; thread++)  
 			pthread_create(&thread_handles[thread], NULL, kMeans, (void*)thread);  
 
 		for (thread = 0; thread < thread_count; thread++) 
 			pthread_join(thread_handles[thread], NULL); 
-		*/
+		
 		//==============================================================
 
 
@@ -217,7 +213,17 @@ int main(int argc, char* argv[]) {
 void *kMeans(void* rank) {
 	long my_rank = (long) rank;
 
-	printf("Thread %ld of %d\n", my_rank, thread_count);
+	long chunk_size = N / thread_count;
+	long start = rank * chunk_size;
+	long end = (rank + 1) * chunk_size - 1;
+
+	//Prevent out of bounds
+	if (rank == (thread_count - 1))
+		end = N;
+	
+
+
+	//printf("Thread %ld of %ld\n", my_rank, thread_count);
 
 	return NULL;
 
