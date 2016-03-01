@@ -21,7 +21,6 @@ int main(int argc, char* argv[]) {
 	FILE *inputFile, *outputFile;
 
 	if (argc != 5) {
-		printf("%i\n", argc);
 		printf("Incorrect parameters.\n");
 		exit(0);
 	} else {
@@ -31,7 +30,7 @@ int main(int argc, char* argv[]) {
 		outputFile = fopen(argv[4], "w+");
 	}
 	
-	printf("Threads: %i, Processors: %i\n", K, processors);
+	printf("Clusters: %i, Processors: %i\n", K, processors);
 
 
 	//Reading in data to dynamic array
@@ -88,7 +87,7 @@ int main(int argc, char* argv[]) {
 	/*==========================================================================
 		Major loop starts here
 	*/
-	int flag1 = 0, flag2 = 0;
+	int flag = 1;
 	for (z = 0; z < 100; z++) { //Repeat process for a maximum of 100 iterations
 
 		for (i = 0; i < K; i++) {
@@ -111,13 +110,11 @@ int main(int argc, char* argv[]) {
 					dataClusterIndex[i] = j;
 				}
 			}
-			//Stop loop if no samples relocate clusters
-			if (dataClusterIndex[i] == prevDataCluster[i]) {
-				flag1 = 1; flag2 = 1;
+			//To stop loop if no samples relocate clusters anymore
+			if (dataClusterIndex[i] != prevDataCluster[i]) {
+				flag = 0;
 			}
-			else {
-				flag2 = 0;
-			}
+
 			//Update prev for next iteration
 			prevDataCluster[i] = dataClusterIndex[i];
 
@@ -161,17 +158,16 @@ int main(int argc, char* argv[]) {
 		printf("//=========== Loop %i ===========//\n", z + 1);
 
 		//If no samples relocate, kmeans clustering is done
-		if ((flag1 & flag2) == 1) {
+		if (flag == 1) {
 			break;
 		} else {
-			flag1 = 0;
-			flag2 = 0;
+			flag = 1;
 		}
 
 	} //End major loop
 
 	printf("Complete!\n");
-	
+
 	//Output results to 'argv[4]'.txt
 	fprintf(outputFile, "%i\n", samples);
 	for (i = 0; i < samples; i++) {
