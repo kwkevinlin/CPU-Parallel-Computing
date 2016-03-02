@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
+#include <time.h>
 #include "etime.h"
 
 /*
@@ -9,6 +10,10 @@
 
 	Parallelization implementations could be improved*
 		*In regards to usage of mutexes
+
+	Note: If two clusters are randomly assigned to the same sample, the second cluster
+	      will likely stay as a (0.0, 0.0) cluster (empty for all dimensions) for the
+	      duration of kmeans clustering, depending on the data
 */
 
 long thread_count;
@@ -49,7 +54,7 @@ int main(int argc, char* argv[]) {
 	printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
 
 	//For all loops
-   	int i, j, y, z;
+   	int i, j, z;
 
    	//Initializing all globals
    	dataClusterIndex = (int *)malloc(samples * sizeof(int));
@@ -77,13 +82,16 @@ int main(int argc, char* argv[]) {
     for (i = 0; i < K; i++)
          clusterInfo[i] = (double *)malloc(dimensions * sizeof(double));
 
-    //2. Seting initial cluster coordinates as coordinates of sample 1, 2, .. K
+    //2. Seting initial cluster coordinates as coordinates
+    srand(time(NULL));
     for (i = 0; i < K; i++) {
+    	int randData = rand() % samples;
 		for (j = 0; j < dimensions; j++) {
-			clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
-			//printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
+			clusterInfo[i][j] = data[randData][j];
+			//clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
+			printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
 		}
-		//printf("\n");
+		printf("\n");
 	}
 	//printf("\n");
 
@@ -216,7 +224,7 @@ void *kMeans(void* rank) {
 		for (i = 0; i < K; i++) {
 			printf("Cluster %i contains: %i elements\n", i, clusterElements[i]);
 			for (j = 0; j < dimensions; j++) {
-				printf("clusterInfo: %lf\n", clusterInfo[i][j]);
+				//printf("clusterInfo: %lf\n", clusterInfo[i][j]);
 				clusterInfo[i][j] = 0;
 			}
 		}
@@ -266,7 +274,9 @@ void *kMeans(void* rank) {
 	    	printf("Cluster %i: ", i);
 			for (y = 0; y < dimensions; y++) {
 
-				clusterInfo[i][y] = clusterInfo[i][y] / (double) clusterElements[i];
+				if (clusterInfo[i][y] != 0) { //Since clusters are randomly assigned, there is a potential for empty clusters
+					clusterInfo[i][y] = clusterInfo[i][y] / (double) clusterElements[i];
+				}
 				printf("%lf ", clusterInfo[i][y]);
 			
 			}
