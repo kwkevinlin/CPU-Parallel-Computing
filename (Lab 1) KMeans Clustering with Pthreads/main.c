@@ -14,6 +14,12 @@
 	Note: If two clusters are randomly assigned to the same sample, the second cluster
 	      will likely stay as a (0.0, 0.0) cluster (empty for all dimensions) for the
 	      duration of kmeans clustering, depending on the data
+
+	      Loop tends to do one more extra (but with no chances). It is because of the 
+	      previous implementation when transferring from serial to parallel code
+
+	Right Now: Parallel slower because overhead too large.
+			   Starting incremental changes.
 */
 
 long thread_count;
@@ -46,12 +52,12 @@ int main(int argc, char* argv[]) {
 		outputFile = fopen(argv[4], "w+");
 	}
 	
-	printf("Clusters: %i, Processors: %ld\n", K, thread_count);
+	//printf("Clusters: %i, Processors: %ld\n", K, thread_count);
 
    	//Reading in data to dynamic array
 	fscanf(inputFile, "%i", &samples);
 	fscanf(inputFile, "%i", &dimensions);
-	printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
+	//printf("Samples: %i, Dimensions: %i\n", samples, dimensions);
 
 	//For all loops
    	int i, j, z;
@@ -89,9 +95,9 @@ int main(int argc, char* argv[]) {
 		for (j = 0; j < dimensions; j++) {
 			clusterInfo[i][j] = data[randData][j];
 			//clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
-			printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
+			//printf("Cluster %i:%i = %lf ", i, j, clusterInfo[i][j]);
 		}
-		printf("\n");
+		//printf("\n");
 	}
 	//printf("\n");
 
@@ -105,11 +111,8 @@ int main(int argc, char* argv[]) {
 	/*==========================================================================
 		Major loop starts here
 	*/
+	tic();
 	for (z = 0; z < 100; z++) { //Repeat process for a maximum of 100 iterations
-
-		for (i = 0; i < K; i++) {
-			clusterElements[i] = 0;
-		}
 
 		//==============================================================
 		
@@ -131,7 +134,7 @@ int main(int argc, char* argv[]) {
 
 	} //End major loop
 
-	printf("Complete!\n");
+	toc();
 
 	//Output results to 'argv[4]'.txt
 	fprintf(outputFile, "%i\n", samples);
@@ -139,6 +142,8 @@ int main(int argc, char* argv[]) {
 		fprintf(outputFile, "%i\n", dataClusterIndex[i]);
 	}
 
+	//printf("Completed!\nTime: %lf\n", etime());
+	printf("%lf\n", etime());
 
 	return 0;
 
@@ -172,6 +177,21 @@ void *kMeans(void* rank) {
 			Each thread takes 2 samples then
 	*/
 
+	//Resetting clusterElement for each loop
+	if (rank == 0) {
+		for (i = 0; i < K; i++) {
+			clusterElements[i] = 0;
+		}
+	}
+
+	//Barrier 1
+	int rc = pthread_barrier_wait(&barrier);
+	if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
+    {
+        printf("Barrier error\n");
+        exit(-1);
+    }
+
 	//3. For each element in your data, assign it to the cluster it's closest to.
 	for (i = start; i <= end; i++) { //Per assigned samples (ie, 2 samples)
 
@@ -193,7 +213,6 @@ void *kMeans(void* rank) {
 			}
 
 			
-
 		}
 		//To stop loop if no samples relocate clusters anymore
 		if (dataClusterIndex[i] != prevDataCluster[i]) {
@@ -203,7 +222,7 @@ void *kMeans(void* rank) {
 		//Update prev for next iteration
 		prevDataCluster[i] = dataClusterIndex[i];
 
-		printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
+		//printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
 		clusterElements[dataClusterIndex[i]]++;
 
 		minDist = 1000000;
@@ -213,7 +232,7 @@ void *kMeans(void* rank) {
 	}
 
 	//Barrier 1
-	int rc = pthread_barrier_wait(&barrier);
+	rc = pthread_barrier_wait(&barrier);
 	if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
     {
         printf("Barrier error\n");
@@ -224,7 +243,7 @@ void *kMeans(void* rank) {
 		for (i = 0; i < K; i++) {
 			printf("Cluster %i contains: %i elements\n", i, clusterElements[i]);
 			for (j = 0; j < dimensions; j++) {
-				//printf("clusterInfo: %lf\n", clusterInfo[i][j]);
+				printf("clusterInfo: %lf\n", clusterInfo[i][j]);
 				clusterInfo[i][j] = 0;
 			}
 		}
