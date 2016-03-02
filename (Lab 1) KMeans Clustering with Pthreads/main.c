@@ -6,31 +6,22 @@
 #include "etime.h"
 
 /*
-	Parallel code using PThreads and arbitrary dimensions
+	Parallel K-Means Clustering using PThreads and arbitrary dimensions
 
-	Parallelization implementations could be improved*
-		*In regards to usage of mutexes
+	To Do:
+		Optimize for loops to minimize complexity
 
-	Note: If two clusters are randomly assigned to the same sample, the second cluster
-	      will likely stay as a (0.0, 0.0) cluster (empty for all dimensions) for the
-	      duration of kmeans clustering, depending on the data
-
-	      Loop tends to do one more extra (but with no chances). It is because of the 
-	      previous implementation when transferring from serial to parallel code
-
-	Right Now: Parallel slower because overhead too large.
-			   Starting incremental changes.
 */
 
 long thread_count;
 int K, samples, dimensions, counter = 0, flag = 1, flagEx = 1;
-double dist, calcKMeansBuffer, minDist = 1000000; //For step 3
 
 pthread_mutex_t mutex;
 pthread_barrier_t barrier;
 int *dataClusterIndex; //Creating dataClusterIndex to map samples to corresponding cluster
 int *prevDataCluster; //Secondary dataClusterIndex to check if clusters are still relocating
-int *clusterElements;
+int *clusterElements; //Number of elements in each cluster
+int *randomCheck; //Making sure no duplicate initial cluster samples are generated
 double **data; //Creating data[samples][dimensions] array to store samples its coordinates
 double **clusterInfo; //Creating clusterInfo to store coordinates of each cluster
 
@@ -66,6 +57,7 @@ int main(int argc, char* argv[]) {
    	dataClusterIndex = (int *)malloc(samples * sizeof(int));
    	prevDataCluster = (int *)malloc(samples * sizeof(int));
    	clusterElements = (int *)malloc(K * sizeof(int));
+   	randomCheck = (int *)malloc(samples * sizeof(int));
    	data = (double **)malloc(samples * sizeof(double *));
    	clusterInfo = (double **)malloc(K * sizeof(double *));
 
@@ -78,6 +70,7 @@ int main(int argc, char* argv[]) {
     //Reading in coordinates to array of arbitrary dimension
     double buffer;
     for (i = 0; i < samples; i++) {
+    	randomCheck[i] = 0;
     	for (j = 0; j < dimensions; j++) {
     		fscanf(inputFile, "%lf", &buffer);
     		data[i][j] = buffer;
@@ -92,6 +85,10 @@ int main(int argc, char* argv[]) {
     srand(time(NULL));
     for (i = 0; i < K; i++) {
     	int randData = rand() % samples;
+    	while(randomCheck[randData] == 1)
+    		randData = rand() % samples;
+    	randomCheck[randData] = 1;
+    	printf("randData: %i\n", randData);
 		for (j = 0; j < dimensions; j++) {
 			clusterInfo[i][j] = data[randData][j];
 			//clusterInfo[i][j] = data[i][j]; //Populate initial cluster with first K samples (ie. cluster 1 = sample 1)
@@ -144,6 +141,7 @@ void *kMeans(void* rank) {
 	long end = (my_rank + 1) * chunk_size - 1;
 
 	int i, j, y, z;
+	double dist, calcKMeansBuffer, minDist = 1000000;
 
 	//Last one deals with the rest
 	if (my_rank == (thread_count - 1))
@@ -165,14 +163,12 @@ void *kMeans(void* rank) {
 		int rc = pthread_barrier_wait(&barrier);
 		if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
 	    {
-	        printf("Barrier error\n");
-	        exit(-1);
+	       	printf("Barrier error\n");
+	       	exit(-1);
 	    }
 
 		//3. For each element in your data, assign it to the cluster it's closest to.
 		for (i = start; i <= end; i++) { //Per assigned samples (ie, 2 samples)
-
-			pthread_mutex_lock(&mutex);
 
 			for (j = 0; j < K; j++) { // Per cluster
 
@@ -188,23 +184,27 @@ void *kMeans(void* rank) {
 					minDist = dist;
 					dataClusterIndex[i] = j;
 				}
-
 				
 			}
 			//To stop loop if no samples relocate clusters anymore
+			//If even one changed, then continue looping
 			if (dataClusterIndex[i] != prevDataCluster[i]) {
 				flag = 0;
 			}
+
+			//printf("Curr: %i, Prev: %i\n", dataClusterIndex[i], prevDataCluster[i]);
 
 			//Update prev for next iteration
 			prevDataCluster[i] = dataClusterIndex[i];
 
 			//printf("Sample %i closest cluster: %i\n", i, dataClusterIndex[i]);
+			pthread_mutex_lock(&mutex);
 			clusterElements[dataClusterIndex[i]]++;
+			pthread_mutex_unlock(&mutex);
 
 			minDist = 1000000;
 
-			pthread_mutex_unlock(&mutex);
+			//pthread_mutex_unlock(&mutex);
 
 		}
 
@@ -218,9 +218,9 @@ void *kMeans(void* rank) {
 
 		if (my_rank == 0) { //Only 1 thread needs to run this
 			for (i = 0; i < K; i++) {
-				//printf("Cluster %i contains: %i elements\n", i, clusterElements[i]); //Uncomment for tracing
+				printf("Cluster %i contains: %i elements\n", i, clusterElements[i]); //Uncomment for tracing
 				for (j = 0; j < dimensions; j++) {
-					//printf("clusterInfo: %lf\n", clusterInfo[i][j]); //Uncomment for tracing
+					//printf("clusterInfo: %lf\n", clusterInfo[i][j]);
 					clusterInfo[i][j] = 0;
 				}
 			}
@@ -234,62 +234,60 @@ void *kMeans(void* rank) {
 	        exit(-1);
 	    }
 
+	    //dont do per cluster loop, clusterInfo[dataClusterIndex[i]]
+
 
 		//4. Move the center of each cluster to be the average of existing samples associated with itself
-		//Get average of coordinates. x+x+x/n, y+y+y/n
-		for (i = 0; i < K; i++) { //Per Cluster
+		//for (i = 0; i < K; i++) { //Per Cluster
 			//printf("Cluster %i (avg): ", i);
+
+		for (j = start; j <= end; j++) { //For samples in the thread, in each cluster
 
 			pthread_mutex_lock(&mutex);
 
-			for (j = start; j <= end; j++) { //For samples in the thread, in each cluster
-				for (y = 0; y < dimensions; y++) { //Per dimension
-
-					//If sample belongs in current cluster
-					if (dataClusterIndex[j] == i) {
-
-						clusterInfo[dataClusterIndex[j]][y] = clusterInfo[dataClusterIndex[j]][y] + data[j][y];
-
-					}
-					
-				}
+			for (y = 0; y < dimensions; y++) { //Per dimension
+				clusterInfo[dataClusterIndex[j]][y] = clusterInfo[dataClusterIndex[j]][y] + data[j][y];
 			}
 
+			//took out mutex
 			pthread_mutex_unlock(&mutex);
+				
+		}
 
-			//Barrier 4
-			rc = pthread_barrier_wait(&barrier);
-			if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
-		    {
-		        printf("Barrier error\n");
-		        exit(-1);
-		    }
+		//Barrier 4
+		rc = pthread_barrier_wait(&barrier);
+		if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
+	    {
+	        printf("Barrier error\n");
+	        exit(-1);
+	    }
 
+	    if (my_rank == 0) {
+			for (i = 0; i < K; i++) { //Per Cluster
 		    //After getting sum, divide by number of samples in the cluster
-		    if (my_rank == 0) {
-		    	//printf("Cluster %i: ", i); //Uncomment for tracing
+		    	printf("Cluster %i: ", i); //Uncomment for tracing
 				for (y = 0; y < dimensions; y++) {
 
 					if (clusterInfo[i][y] != 0) { //Since clusters are randomly assigned, there is a potential for empty clusters
 						clusterInfo[i][y] = clusterInfo[i][y] / (double) clusterElements[i];
 					}
-					//printf("%lf ", clusterInfo[i][y]); //Uncomment for tracing
+					printf("%lf ", clusterInfo[i][y]); //Uncomment for tracing
 				
 				}
-				//printf("\n"); //Uncomment for tracing
+				printf("\n"); //Uncomment for tracing
 			}
 					
 
 		}
 
 		if (my_rank == 0) {
-			//printf("//=========== Loop %i ===========//\n", counter + 1);
+			printf("//=========== Loop %i ===========//\n", counter + 1);
 			counter++;
 		}
 
 		//Determining when to stop 100 loop iteration, continues after barrier
 		pthread_mutex_lock(&mutex);
-		flagEx = (flagEx & flag);
+		flagEx = (flagEx & flag); //Have to check each thread to see if all no change (ie. all stay 1)
 		pthread_mutex_unlock(&mutex);
 
 		//Barrier 5
@@ -318,6 +316,9 @@ void *kMeans(void* rank) {
 
 
 	} //End major loop
+
+	if (my_rank == 0) 
+		printf("Loops: %i\n", counter);
 
 	return NULL;
 
