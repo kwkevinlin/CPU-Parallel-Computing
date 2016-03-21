@@ -12,8 +12,11 @@ int main(int argc, char* argv[]) {
 	//		cout << "Incorrect number of arguments. Terminating.\n";
 	//		exit(-1);
 	//	}
+	//
+	//	ifstream inMotif(argv[1]);
+	//	ifstream inSequence(argv[2]);
+	//	ofstream output(argv[3]);
 
-	// ./motifsearch motifFilename sequenceFilename outputFilename
 	ifstream inMotif("classMotifs.txt");
 	ifstream inSequence("classSequences.txt");
 	ofstream output("outputSmall.txt");
@@ -22,6 +25,7 @@ int main(int argc, char* argv[]) {
 	vector<string> sequences;
 
 	string n;
+	cout << "Input:\n";
 	inMotif >> n >> n;
 	while (inMotif >> n) {
 		motifs.push_back(n);
@@ -65,8 +69,22 @@ int main(int argc, char* argv[]) {
 	}
 
 	cout << endl << matchedMotifs.size() << endl;
+	output << matchedMotifs.size() << endl;
 	for (auto kv : matchedMotifs) {
 		cout << kv.first << "," << kv.second << endl;
+		output << kv.first << "," << kv.second << endl;
 	}
+
+	/*
+	 * Output:
+	 * 	   3
+	 *	   RSTXC,1
+	 *	   TXCCX,2
+	 *	   AXMLC,1
+	 */
+
+	inMotif.close();
+	inSequence.close();
+	output.close();
 
 }
