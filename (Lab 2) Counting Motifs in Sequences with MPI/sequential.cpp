@@ -3,8 +3,21 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <stack> //Get rid of this
+//#include "etime.h"
 
 using namespace std;
+
+struct Motifs {
+	string data;
+	int count;
+
+	Motifs(string d, int c) {
+		data = d;
+		count = c;
+	}
+};
+
 
 int main(int argc, char* argv[]) {
 
@@ -25,16 +38,22 @@ int main(int argc, char* argv[]) {
 	vector<string> sequences;
 
 	string n;
-	cout << "Input:\n";
+	string numChars;
 	inMotif >> n >> n;
+	numChars = n;
 	while (inMotif >> n) {
 		motifs.push_back(n);
 	}
 	inSequence >> n >> n;
+	if (numChars != n) {
+		cout << "Number of characters do not match!\n";
+		exit(-1);
+	}
 	while (inSequence >> n) {
 		sequences.push_back(n);
 	}
 
+	cout << "Input:\n";
 	for (int i = 0; i < motifs.size(); i++) {
 		cout << motifs[i] << " ";
 	} cout << endl;
@@ -44,6 +63,8 @@ int main(int argc, char* argv[]) {
 
 	int isMatch = 1;
 	unordered_map<string, int> matchedMotifs; //Stores matched motifs and their count in a hash
+
+	//tic();
 
 	//Brute force method
 	for (int i = 0; i < motifs.size(); i++) { //For every motif string
@@ -68,20 +89,36 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	//toc();
+
 	cout << endl << matchedMotifs.size() << endl;
 	output << matchedMotifs.size() << endl;
+	stack<Motifs> revStack;
 	for (auto kv : matchedMotifs) {
-		cout << kv.first << "," << kv.second << endl;
-		output << kv.first << "," << kv.second << endl;
+		revStack.push(Motifs(kv.first, kv.second));
+		//cout << kv.first << "," << kv.second << endl;
+		//output << kv.first << "," << kv.second << endl;
 	}
 
+	//cout << "Time: " << etime() << endl;
+
 	/*
-	 * Output:
+	 * Current Output:
 	 * 	   3
 	 *	   RSTXC,1
 	 *	   TXCCX,2
 	 *	   AXMLC,1
+	 *
+	 * 	   ... is revered
+	 *
 	 */
+
+	//To reverse output, UN-IDEALLY for now:
+	while (revStack.size() > 0) {
+		cout << revStack.top().data << ", " << revStack.top().count << endl;
+		output << revStack.top().data << ", " << revStack.top().count << endl;
+		revStack.pop();
+	}
 
 	inMotif.close();
 	inSequence.close();
