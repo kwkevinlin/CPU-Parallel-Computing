@@ -3,36 +3,30 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
-#include <stack> //Get rid of this
-//#include "etime.h"
+#include "etime.h"
 
 using namespace std;
 
-struct Motifs {
-	string data;
-	int count;
+/*
+	Currently compiling via:
+	g++ -o main sequential.cpp etime.c -std=c++0x
 
-	Motifs(string d, int c) {
-		data = d;
-		count = c;
-	}
-};
-
+ */
 
 int main(int argc, char* argv[]) {
 
-	//	if (argc != 4) {
-	//		cout << "Incorrect number of arguments. Terminating.\n";
-	//		exit(-1);
-	//	}
-	//
-	//	ifstream inMotif(argv[1]);
-	//	ifstream inSequence(argv[2]);
-	//	ofstream output(argv[3]);
+	if (argc != 4) {
+		cout << "Incorrect number of arguments. Terminating.\n";
+		exit(-1);
+	}
 
-	ifstream inMotif("classMotifs.txt");
-	ifstream inSequence("classSequences.txt");
-	ofstream output("outputSmall.txt");
+	ifstream inMotif(argv[1]);
+	ifstream inSequence(argv[2]);
+	ofstream output(argv[3]);
+
+	// ifstream inMotif("classMotifs.txt");
+	// ifstream inSequence("classSequences.txt");
+	// ofstream output("outputSmall.txt");
 
 	vector<string> motifs;
 	vector<string> sequences;
@@ -64,7 +58,7 @@ int main(int argc, char* argv[]) {
 	int isMatch = 1;
 	unordered_map<string, int> matchedMotifs; //Stores matched motifs and their count in a hash
 
-	//tic();
+	tic();
 
 	//Brute force method
 	for (int i = 0; i < motifs.size(); i++) { //For every motif string
@@ -89,36 +83,30 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	//toc();
+	toc();
 
 	cout << endl << matchedMotifs.size() << endl;
 	output << matchedMotifs.size() << endl;
-	stack<Motifs> revStack;
 	for (auto kv : matchedMotifs) {
-		revStack.push(Motifs(kv.first, kv.second));
-		//cout << kv.first << "," << kv.second << endl;
-		//output << kv.first << "," << kv.second << endl;
+		cout << kv.first << "," << kv.second << endl;
+		output << kv.first << "," << kv.second << endl;
 	}
 
-	//cout << "Time: " << etime() << endl;
+	cout << "\nTime: " << etime() << endl;
 
 	/*
-	 * Current Output:
+	 * MingW Output:
 	 * 	   3
 	 *	   RSTXC,1
 	 *	   TXCCX,2
 	 *	   AXMLC,1
 	 *
-	 * 	   ... is revered
+	 * 	   On Windows's MingW is REVERSED
 	 *
+	 *	BUT NOTE: Apparently MingW compiler's map insert is different
+	 *            from Bally's GCC.
+	 *		Do NOT need to use stack to reverse map in Bally
 	 */
-
-	//To reverse output, UN-IDEALLY for now:
-	while (revStack.size() > 0) {
-		cout << revStack.top().data << ", " << revStack.top().count << endl;
-		output << revStack.top().data << ", " << revStack.top().count << endl;
-		revStack.pop();
-	}
 
 	inMotif.close();
 	inSequence.close();
