@@ -92,11 +92,9 @@ int main(int argc, char* argv []) {
 		cout << "Each processor getting " << distSize << " motifs\n\n";
 		string distArr[distSize];
 		int sendIndex = distSize;
-		//Linearize into 1D array
 
-
-
-
+		//Broadcast motifLenght
+		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 		//Distribute motifs via MPI_Scatter
 		
@@ -106,7 +104,9 @@ int main(int argc, char* argv []) {
 		//int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 	}
 	else { //Other processes
-		//MPI_Gather
+		int motifsLength;
+		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		//cout << "Processor " << my_rank << ", motifsLength " << motifsLength << endl;
 
 	}
 
