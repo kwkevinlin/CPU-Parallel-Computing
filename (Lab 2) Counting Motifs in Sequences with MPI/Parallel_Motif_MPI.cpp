@@ -26,9 +26,14 @@ int main(int argc, char* argv []) {
 	int my_rank;               /* My process rank        */
 	char* localMotif;		   /* Local buffer for scatter receive */
 	char* sequences;		   /* Local whole sequences array */
+	char* matchedMotifs;	   /* Local copy */
+	int* matchedCounter;	   /* Local copy */
+	int mtchMotifsIndex = 0;   /* Local copy */
+	int mtchCounterIndex = 0;  /* Local copy */
 	int motifsLength;		   /* Local copy */
 	int numMotifs;			   /* Local copy */
 	int numSequences;		   /* Local copy */
+	int isMatch = 1;		   /* Local copy */
 
 	// if (argc != 4) {
 	// 	if (my_rank == 0) { //Only Processor 0 printout, but all terminate
@@ -71,7 +76,7 @@ int main(int argc, char* argv []) {
 				cout << endl;
 			}
 			cout << motifs[i];
-		} cout << endl;
+		} cout << endl << endl;
 
 		//Reading in Sequences
 		inSequence >> numSequences >> motifsLength; //n can be discarded since n will == motifsLength
@@ -102,23 +107,69 @@ int main(int argc, char* argv []) {
 		//Broadcast whole sequence
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
+		//Two arrays to mimick hash table
+		matchedMotifs = (char*) malloc((numMotifs/comm_sz) * motifsLength + 1); //Too wasteful of space?
+		matchedCounter = (int*) malloc((numMotifs/comm_sz) * motifsLength);
+		memset(matchedMotifs, '\0', sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
+		memset(matchedCounter, 0, sizeof(int) * (numMotifs/comm_sz) * motifsLength);
+
+		int oldI = -1;
 		//Compare localMotifs against Sequences
-		//localMotif, sequences
 		for (int i = 0; i < numMotifs/comm_sz; i++) {
 			for (int j = 0; j < numSequences/comm_sz; j++) {
 
 				//For each character in motif
 				for (int k = 0; k < motifsLength; k++) {
 					if (localMotif[i * motifsLength + k] != sequences[j * motifsLength + k] && localMotif[i * motifsLength + k] != 'X') {
-						cout << "Different!\n";
-						for (int y = 0; y < motifsLength; y++) {
-							cout << sequences[i * motifsLength + y];
-						}
-						cout << endl;
+						isMatch = 0;
+						break;
 					}
 				}
+
+				if (isMatch == 1) {
+					//Print matches and also store to matchedMotifs[]
+					if (oldI != i) {
+					 	for (int y = 0; y < motifsLength; y++) {
+					 		matchedMotifs[mtchMotifsIndex] = localMotif[i * motifsLength + y]; //Store this motif to matchedMotifs
+					 		mtchMotifsIndex++;
+						}
+						matchedCounter[mtchCounterIndex]++; //Increment this index representing match
+						mtchCounterIndex++;
+					}
+					oldI = i;
+
+					cout << endl << "Match: ";
+					for (int y = 0; y < motifsLength; y++) {
+					 	cout << localMotif[i * motifsLength + y];
+					}
+					cout << " and ";
+					for (int y = 0; y < motifsLength; y++) {
+						cout << sequences[i * motifsLength + y];
+					}
+					cout << endl;
+
+				} else {
+					isMatch = 1;
+				}
+
 			}
 		}
+
+		//Checing matchedMotifs and matchedCounters
+		cout << endl;
+		int index = 0;
+		for (int i = 0; i < strlen(matchedMotifs); i++) {
+			if (i % 5 == 0 && i != 0) {
+				cout << endl;
+			}
+			cout << matchedMotifs[i];
+		} cout << endl;
+		for (int i = 0; i < mtchMotifsIndex/motifsLength; i++) {
+			if (i % 5 == 0 && i != 0) {
+				cout << endl;
+			}
+			cout << matchedCounter[i] << endl;
+		} cout << endl;
 
 	} else { //Other processes
 
