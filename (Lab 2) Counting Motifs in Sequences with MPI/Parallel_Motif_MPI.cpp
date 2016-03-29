@@ -23,6 +23,16 @@ using namespace std;
 int main(int argc, char* argv []) {
 	int comm_sz;               /* Number of processes    */
 	int my_rank;               /* My process rank        */
+	char* localMotif;		   /* Local buffer for scatter receive */
+	int motifsLength;		   /* Local copy */
+	int numMotifs;			   /* Local copy */
+
+	// if (argc != 4) {
+	// 	if (my_rank == 0) { //Only Processor 0 printout, but all terminate
+	// 		cout << "Incorrect number of arguments. Terminating.\n";
+	// 	}
+	// 	exit(-1);
+	// }
 
 	/* Start up MPI */
 	MPI_Init(NULL, NULL); 
@@ -32,13 +42,6 @@ int main(int argc, char* argv []) {
 
 	/* Get my rank among all the processes */
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); 
-
-	// if (argc != 4) {
-	// 	if (my_rank == 0) { //Only Processor 0 printout, but all terminate
-	// 		cout << "Incorrect number of arguments. Terminating.\n";
-	// 	}
-	// 	exit(-1);
-	// }
 
 	if (my_rank == 0) {
 
@@ -50,7 +53,7 @@ int main(int argc, char* argv []) {
 		ifstream inSequence("classSequences.txt");
 		ofstream output("outputSmall.txt");
 
-		int numMotifs, numSequences, motifsLength, distSize;
+		int numSequences;
 
 		//Reading in Motifs
 		inMotif >> numMotifs >> motifsLength;
@@ -86,28 +89,40 @@ int main(int argc, char* argv []) {
 			}
 			cout << sequences[i];
 		}
-		
-		//Evenly distributing motifs
-		distSize = numMotifs/comm_sz;
-		cout << "Each processor getting " << distSize << " motifs\n\n";
-		string distArr[distSize];
-		int sendIndex = distSize;
 
-		//Broadcast motifLenght
+		//Broadcast motifLength and numMotifs
 		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-		//Distribute motifs via MPI_Scatter
+		//Distribute motifs
+		localMotif = (char *) malloc(sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
+		cout << "localMotif Size: " << (numMotifs/comm_sz)*motifsLength + 1 << endl;
+		MPI_Scatter(motifs, 5, MPI_CHAR, localMotif, 5, MPI_CHAR, 0, MPI_COMM_WORLD);
 		
-
+		//Broadcast whole sequence
 
 		//MPI_broadcast whole sequence length to other processors
 		//int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 	}
 	else { //Other processes
-		int motifsLength;
-		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		//cout << "Processor " << my_rank << ", motifsLength " << motifsLength << endl;
 
+		//Receive motifsLength and numMotifs
+		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		//cout << "Processor " << my_rank << ", numMotifs " << numMotifs << endl;
+
+		//Receive motifs
+		localMotif = (char *) malloc(sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
+		MPI_Scatter(NULL, 5, MPI_CHAR, localMotif, 5, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+		// cout << "Processor " << my_rank << ": Motif: \n";
+		// for (int i = 0; i < strlen(localMotif); i++) {
+		// 	cout << localMotif[i];
+		// }
+		// cout << endl;
+
+		//Receive whole sequence
+		
 	}
 
 	/* Shut down MPI */
