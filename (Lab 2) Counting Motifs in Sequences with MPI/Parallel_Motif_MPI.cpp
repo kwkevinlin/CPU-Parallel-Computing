@@ -51,23 +51,40 @@ int main(int argc, char* argv []) {
 		ofstream output("outputSmall.txt");
 
 		int numMotifs, numSequences, motifsLength, distSize;
-		string n;
 
-		//Read in data
+		//Reading in Motifs
 		inMotif >> numMotifs >> motifsLength;
-
-		string motifs[numMotifs];
+		char motifs[(numMotifs * motifsLength) + 1]; //1 for \0
+		memset(motifs, '\0', sizeof(char)*((numMotifs * motifsLength) + 1));
 		for (int i = 0; i < numMotifs; i++) {
-			inMotif >> n;
-			motifs[i] = n;
+			inMotif >> motifs + strlen(motifs); //Read in, append to motifs
+			//strlen gives length to \0, so pointer arithmetic, starting from \0, append
 		}
 
-		inSequence >> numSequences >> n; //n can be discarded since n will == motifsLength
+		//Checking Motifs Array
+		for (int i = 0; i < int(strlen(motifs)); i++) {
+			if (i % 5 == 0 && i != 0) {
+				cout << endl;
+			}
+			cout << motifs[i];
+		}
 
-		string sequences[numSequences];
+		//Reading in Sequences
+		inSequence >> numSequences >> motifsLength; //n can be discarded since n will == motifsLength
+		char sequences[(numSequences * motifsLength) + 1]; //sequenceLength == motifsLength
+		memset(sequences, '\0', sizeof(char)*((numSequences * motifsLength) + 1));
 		for (int i = 0; i < numSequences; i++) {
-			inSequence >> n;
-			sequences[i] = n;
+			inSequence >> sequences + strlen(sequences);
+		}
+
+		cout << endl;
+
+		//Checking Sequences Array
+		for (int i = 0; i < int(strlen(sequences)); i++) {
+			if (i % 5 == 0 && i != 0) {
+				cout << endl;
+			}
+			cout << sequences[i];
 		}
 		
 		//Evenly distributing motifs
@@ -75,34 +92,21 @@ int main(int argc, char* argv []) {
 		cout << "Each processor getting " << distSize << " motifs\n\n";
 		string distArr[distSize];
 		int sendIndex = distSize;
+		//Linearize into 1D array
 
-		/*
-			NOTE:
-				Instead of sending ARRAY of std:STRINGS since I have no idea how to,
-				sprintf them all into 1 array of chars, then send motifsLength and that
-				array. In my_rank != 0 processes, parse individually.
-		*/
 
-		//Need to broadcast: distSize, motifsLength first?
-				
-		//MPI_Send distributed motifs to other processors
-		for (int i = 1; i < comm_sz; i++) { //Other processors, thus i = 1
-			cout << "Sending: ";
-			for (int j = 0; j < distSize; j++) {
-				distArr[j] = motifs[sendIndex];
-				sendIndex++;
-				cout << distArr[j] << " ";
-			}
-			cout << "to processor " << i << endl;
-			//MPI_Send(result.c_str(), result.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
-			MPI_Send(distArr, sizeof(distArr), MPI_CHAR, i, 0, MPI_COMM_WORLD);
-		}
+
+
+
+		//Distribute motifs via MPI_Scatter
+		
+
 
 		//MPI_broadcast whole sequence length to other processors
 		//int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 	}
 	else { //Other processes
-		MPI_Recv()
+		//MPI_Gather
 
 	}
 
