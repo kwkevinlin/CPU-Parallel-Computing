@@ -76,7 +76,16 @@ int main(int argc, char* argv []) {
 		string distArr[distSize];
 		int sendIndex = distSize;
 
-		//MPI send distributed motifs to other processors
+		/*
+			NOTE:
+				Instead of sending ARRAY of std:STRINGS since I have no idea how to,
+				sprintf them all into 1 array of chars, then send motifsLength and that
+				array. In my_rank != 0 processes, parse individually.
+		*/
+
+		//Need to broadcast: distSize, motifsLength first?
+				
+		//MPI_Send distributed motifs to other processors
 		for (int i = 1; i < comm_sz; i++) { //Other processors, thus i = 1
 			cout << "Sending: ";
 			for (int j = 0; j < distSize; j++) {
@@ -85,12 +94,15 @@ int main(int argc, char* argv []) {
 				cout << distArr[j] << " ";
 			}
 			cout << "to processor " << i << endl;
+			//MPI_Send(result.c_str(), result.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+			MPI_Send(distArr, sizeof(distArr), MPI_CHAR, i, 0, MPI_COMM_WORLD);
 		}
+
 		//MPI_broadcast whole sequence length to other processors
 		//int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 	}
 	else { //Other processes
-
+		MPI_Recv()
 
 	}
 
