@@ -3,6 +3,7 @@
 #include <string> //std::string
 #include <fstream>
 #include <cstdlib>
+#include <vector>
 #include <mpi.h> 
 
 /*
@@ -49,18 +50,44 @@ int main(int argc, char* argv []) {
 		ifstream inSequence("classSequences.txt");
 		ofstream output("outputSmall.txt");
 
-		int numMotifs, motifsLength, distSize;
+		int numMotifs, numSequences, motifsLength, distSize;
+		string n;
 
+		//Read in data
 		inMotif >> numMotifs >> motifsLength;
 
+		string motifs[numMotifs];
+		for (int i = 0; i < numMotifs; i++) {
+			inMotif >> n;
+			motifs[i] = n;
+		}
+
+		inSequence >> numSequences >> n; //n can be discarded since n will == motifsLength
+
+		string sequences[numSequences];
+		for (int i = 0; i < numSequences; i++) {
+			inSequence >> n;
+			sequences[i] = n;
+		}
+		
 		//Evenly distributing motifs
-		distSize = comm_sz/numMotifs;
-		cout << "Each processor getting " << distSize << " motifs";
+		distSize = numMotifs/comm_sz;
+		cout << "Each processor getting " << distSize << " motifs\n\n";
+		string distArr[distSize];
+		int sendIndex = distSize;
 
 		//MPI send distributed motifs to other processors
-
+		for (int i = 1; i < comm_sz; i++) { //Other processors, thus i = 1
+			cout << "Sending: ";
+			for (int j = 0; j < distSize; j++) {
+				distArr[j] = motifs[sendIndex];
+				sendIndex++;
+				cout << distArr[j] << " ";
+			}
+			cout << "to processor " << i << endl;
+		}
 		//MPI_broadcast whole sequence length to other processors
-
+		//int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 	}
 	else { //Other processes
 
