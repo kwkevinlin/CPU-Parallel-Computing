@@ -11,11 +11,12 @@
 	mpiexec -n 4 ./prog
 
 	Distributing Motifs
-		Every processor gets fair share of motifs
-		And complete sequence of sequences
+		Every processor gets:
+			Fair share of motifs
+			Complete sequence of sequences
 
-	Processor 0 does input/output
-		Also distributes data
+	Processor 0 responsible input/output
+		And distribution of data
 */
 
 using namespace std;
@@ -70,7 +71,7 @@ int main(int argc, char* argv []) {
 				cout << endl;
 			}
 			cout << motifs[i];
-		}
+		} cout << endl;
 
 		//Reading in Sequences
 		inSequence >> numSequences >> motifsLength; //n can be discarded since n will == motifsLength
@@ -81,15 +82,13 @@ int main(int argc, char* argv []) {
 			inSequence >> sequences + strlen(sequences);
 		}
 
-		cout << endl;
-
 		//Checking Sequences Array
 		for (int i = 0; i < int(strlen(sequences)); i++) {
 			if (i % 5 == 0 && i != 0) {
 				cout << endl;
 			}
 			cout << sequences[i];
-		}
+		} cout << endl;
 
 		//Broadcast motifLength, numMotifs, numSequence
 		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -103,10 +102,27 @@ int main(int argc, char* argv []) {
 		//Broadcast whole sequence
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-	}
-	else { //Other processes
+		//Compare localMotifs against Sequences
+		//localMotif, sequences
+		for (int i = 0; i < numMotifs/comm_sz; i++) {
+			for (int j = 0; j < numSequences/comm_sz; j++) {
 
-		//Receive motifsLength and numMotifs
+				//For each character in motif
+				for (int k = 0; k < motifsLength; k++) {
+					if (localMotif[i * motifsLength + k] != sequences[j * motifsLength + k] && localMotif[i * motifsLength + k] != 'X') {
+						cout << "Different!\n";
+						for (int y = 0; y < motifsLength; y++) {
+							cout << sequences[i * motifsLength + y];
+						}
+						cout << endl;
+					}
+				}
+			}
+		}
+
+	} else { //Other processes
+
+		//Receive motifsLength, numMotifs, and numSequences
 		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numSequences, 1, MPI_INT, 0, MPI_COMM_WORLD);
