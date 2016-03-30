@@ -57,8 +57,8 @@ int main(int argc, char* argv []) {
 		// ifstream inSequence(argv[2]);
 		// ofstream output(argv[3]);
 
-		ifstream inMotif("classMotifs.txt");
-		ifstream inSequence("classSequences.txt");
+		ifstream inMotif("motifsSmall.txt");
+		ifstream inSequence("sequencesSmall.txt");
 		ofstream output("outputSmall.txt");
 
 		//Reading in Motifs
@@ -72,7 +72,7 @@ int main(int argc, char* argv []) {
 
 		//Checking Motifs Array
 		for (int i = 0; i < int(strlen(motifs)); i++) {
-			if (i % 5 == 0 && i != 0) {
+			if (i % motifsLength == 0 && i != 0) {
 				cout << endl;
 			}
 			cout << motifs[i];
@@ -89,7 +89,7 @@ int main(int argc, char* argv []) {
 
 		//Checking Sequences Array
 		for (int i = 0; i < int(strlen(sequences)); i++) {
-			if (i % 5 == 0 && i != 0) {
+			if (i % motifsLength == 0 && i != 0) {
 				cout << endl;
 			}
 			cout << sequences[i];
@@ -99,22 +99,21 @@ int main(int argc, char* argv []) {
 		inMotif.close();
 		inSequence.close();
 
-		//Broadcast motifLength, numMotifs, numSequence
+		//Broadcast motifsLength, numMotifs, numSequence
 		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numSequences, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 		//Distribute motifs
 		localMotif = (char *) malloc(sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
-		MPI_Scatter(motifs, 5, MPI_CHAR, localMotif, 5, MPI_CHAR, 0, MPI_COMM_WORLD);
+		MPI_Scatter(motifs, motifsLength, MPI_CHAR, localMotif, motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 		
 		//Broadcast whole sequence
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
-		matchedMotifs = (char*) malloc((numMotifs/comm_sz) * motifsLength + 1); //Too wasteful of space?
-		//matchedCounter = (int*) malloc((numMotifs/comm_sz) * motifsLength);
-		matchedCounter = (int*) malloc(numMotifs/comm_sz);
+		matchedMotifs = (char*) malloc(sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
+		matchedCounter = (int*) malloc(sizeof(int) * numMotifs/comm_sz);
 		memset(matchedMotifs, '\0', sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
 		memset(matchedCounter, 0, sizeof(int) * (numMotifs/comm_sz));
 
@@ -130,6 +129,14 @@ int main(int argc, char* argv []) {
 						break;
 					}
 				}
+
+				/*
+					Discovered Issue: 
+						Even if no match, should still output, but 0
+
+					Also (important):
+						Allocate EVERYTHING to heap, run again to check error, I think it was that for medium.
+				*/
 
 				if (isMatch == 1) {
 					//Print matches and also store to matchedMotifs[]
@@ -165,13 +172,13 @@ int main(int argc, char* argv []) {
 		//Checking matchedMotifs and matchedCounters
 		// cout << endl;
 		// for (int i = 0; i < strlen(matchedMotifs); i++) {
-		// 	if (i % 5 == 0 && i != 0) {
+		// 	if (i % motifsLength == 0 && i != 0) {
 		// 		cout << endl;
 		// 	}
 		// 	cout << matchedMotifs[i];
 		// } cout << endl;
 		// for (int i = 0; i <= mtchCounterIndex; i++) {
-		// 	if (i % 5 == 0 && i != 0) {
+		// 	if (i % motifsLength == 0 && i != 0) {
 		// 		cout << endl;
 		// 	}
 		// 	cout << matchedCounter[i] << endl;
@@ -182,7 +189,7 @@ int main(int argc, char* argv []) {
 		memset(motifs, '\0', sizeof(char)*((numMotifs * motifsLength) + 1)); //Store retrieve in motifs
 		MPI_Gather(matchedMotifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, motifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 		//Number of matches for each matched motifs (above)
-		int* histoCounter = (int*) malloc((numMotifs/comm_sz));
+		int* histoCounter = (int*) malloc(sizeof(int) * (numMotifs/comm_sz));
 		memset(histoCounter, 0, sizeof(int)*(numMotifs/comm_sz));
 		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, histoCounter, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -190,7 +197,7 @@ int main(int argc, char* argv []) {
 		cout << "Matched Motifs: ";
 		cout << strlen(motifs) / motifsLength<< endl;
 		for (int i = 0; i < strlen(motifs); i++) {
-			if (i % 5 == 0 && i != 0) {
+			if (i % motifsLength == 0 && i != 0) {
 				cout << endl;
 			}
 			cout << motifs[i];
@@ -204,7 +211,7 @@ int main(int argc, char* argv []) {
 		int index = 0;
 		output << strlen(motifs) / motifsLength << endl;
 		for (int i = 0; i <= strlen(motifs); i++) {
-			if (i % 5 == 0 && i != 0) {
+			if (i % motifsLength == 0 && i != 0) {
 				output << "," << histoCounter[index] << endl;
 				index++;
 			}
@@ -224,17 +231,17 @@ int main(int argc, char* argv []) {
 		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numSequences, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-		//Receive motifs //HARDCODED 5, CHANGE THIS LATER
+		//Receive motifs
 		localMotif = (char *) malloc(sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
-		MPI_Scatter(NULL, 5, MPI_CHAR, localMotif, 5, MPI_CHAR, 0, MPI_COMM_WORLD);
+		MPI_Scatter(NULL, motifsLength, MPI_CHAR, localMotif, motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Receive whole sequence
 		sequences = (char *) malloc(sizeof(char) * (numSequences * motifsLength) + 1);
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
-		matchedMotifs = (char*) malloc((numMotifs/comm_sz) * motifsLength + 1);
-		matchedCounter = (int*) malloc((numMotifs/comm_sz));
+		matchedMotifs = (char*) malloc(sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
+		matchedCounter = (int*) malloc(sizeof(int) * (numMotifs/comm_sz));
 		memset(matchedMotifs, '\0', sizeof(char) * (numMotifs/comm_sz) * motifsLength + 1);
 		memset(matchedCounter, 0, sizeof(int) * (numMotifs/comm_sz));
 
@@ -290,13 +297,13 @@ int main(int argc, char* argv []) {
 		// if (my_rank == 1) {
 		// 	cout << "Rank 1:\n";
 		// 	for (int i = 0; i < strlen(matchedMotifs); i++) {
-		// 		if (i % 5 == 0 && i != 0) {
+		// 		if (i % motifsLength == 0 && i != 0) {
 		// 			cout << endl;
 		// 		}
 		// 		cout << matchedMotifs[i];
 		// 	} cout << endl;
 		// 	for (int i = 0; i <= mtchCounterIndex; i++) {
-		// 		if (i % 5 == 0 && i != 0) {
+		// 		if (i % motifsLength == 0 && i != 0) {
 		// 			cout << endl;
 		// 		}
 		// 		cout << matchedCounter[i] << endl;
