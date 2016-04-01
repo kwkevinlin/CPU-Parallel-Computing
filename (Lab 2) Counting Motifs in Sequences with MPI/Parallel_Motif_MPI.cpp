@@ -1,14 +1,15 @@
 #include <iostream>
-#include <cstring> //CString for C++
-#include <string> //std::string
+#include <cstring>
 #include <fstream>
 #include <cstdlib>
-#include <vector>
+#include "etime.h"
 #include <mpi.h> 
 
 /*
-	mpic++ -g -Wall -o prog prog.cpp
-	mpiexec -n 4 ./prog
+	Compile:
+	    mpic++ -g -Wall -o mpi1 mpi1.cpp etime.c
+	Run:
+	    mpiexec -n 4 ./mp1
 
 	Distributing Motifs
 		Every processor gets:
@@ -35,13 +36,6 @@ int main(int argc, char* argv []) {
 	int numSequences;		   /* Local copy */
 	int isMatch = 1;		   /* Local copy */
 
-	// if (argc != 4) {
-	// 	if (my_rank == 0) { //Only Processor 0 printout, but all terminate
-	// 		cout << "Incorrect number of arguments. Terminating.\n";
-	// 	}
-	// 	exit(-1);
-	// }
-
 	/* Start up MPI */
 	MPI_Init(NULL, NULL); 
 
@@ -53,17 +47,24 @@ int main(int argc, char* argv []) {
 
 	if (my_rank == 0) {
 
-		// ifstream inMotif(argv[1]);
-		// ifstream inSequence(argv[2]);
-		// ofstream output(argv[3]);
+		if (argc != 4) {
+			if (my_rank == 0) { //Only Processor 0 printout, but all terminate
+				cout << "Incorrect number of arguments. Terminating.\n";
+			}
+			exit(-1);
+		}
+
+		ifstream inMotif(argv[1]);
+		ifstream inSequence(argv[2]);
+		ofstream output(argv[3]);
 
 		// ifstream inMotif("motifsSmall.txt");
 		// ifstream inSequence("sequencesSmall.txt");
 		// ofstream output("outputSmall.txt");
 
-		ifstream inMotif("motifsMedium.txt");
-		ifstream inSequence("sequencesMedium.txt");
-		ofstream output("outputMedium.txt");
+		// ifstream inMotif("motifsMedium.txt");
+		// ifstream inSequence("sequencesMedium.txt");
+		// ofstream output("outputMedium.txt");
 
 		// ifstream inMotif("motifsLarge.txt");
 		// ifstream inSequence("sequencesLarge.txt");
@@ -106,6 +107,8 @@ int main(int argc, char* argv []) {
 		//Closing ifstreams
 		inMotif.close();
 		inSequence.close();
+
+		tic();
 
 		//Broadcast motifsLength, numMotifs, numSequence
 		MPI_Bcast(&motifsLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -161,6 +164,8 @@ int main(int argc, char* argv []) {
 		memset(histoCounter, 0, sizeof(int)*(numMotifs/comm_sz));
 		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, histoCounter, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
 
+		toc();
+
 		//Check MPI_Gather results
 		// cout << "Matched Motifs: ";
 		// cout << strlen(motifs) / motifsLength<< endl;
@@ -189,9 +194,11 @@ int main(int argc, char* argv []) {
 		}
 
 		output.close();
-		
+
 		free(histoCounter);
-		
+
+		cout << "Elapsed Time: " << etime() << endl;
+
 	} else { //Other processes
 
 		//Receive motifsLength, numMotifs, and numSequences
@@ -242,7 +249,6 @@ int main(int argc, char* argv []) {
 		//Send results back to Process 0
 		MPI_Gather(matchedMotifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, NULL, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, NULL, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
-
 
 	}
 
