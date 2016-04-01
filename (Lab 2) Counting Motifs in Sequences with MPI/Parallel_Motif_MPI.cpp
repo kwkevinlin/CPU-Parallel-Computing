@@ -23,18 +23,18 @@
 using namespace std;
 
 int main(int argc, char* argv []) {
-	int comm_sz;               /* Number of processes    */
-	int my_rank;               /* My process rank        */
-	char* localMotif;		   /* Local buffer for scatter receive */
-	char* sequences;		   /* Local whole sequences array */
+	int comm_sz;               /* Number of processes */
+	int my_rank;               /* My process rank */
+	char* localMotif;	   /* Local buffer for scatter receive */
+	char* sequences;	   /* Local whole sequences array */
 	char* matchedMotifs;	   /* Local copy */
 	int* matchedCounter;	   /* Local copy */
 	int mtchMotifsIndex = 0;   /* Local copy */
 	int mtchCounterIndex = -1; /* Local copy */
-	int motifsLength;		   /* Local copy */
-	int numMotifs;			   /* Local copy */
-	int numSequences;		   /* Local copy */
-	int isMatch = 1;		   /* Local copy */
+	int motifsLength;	   /* Local copy */
+	int numMotifs;		   /* Local copy */
+	int numSequences;          /* Local copy */
+	int isMatch = 1;           /* Local copy */
 
 	/* Start up MPI */
 	MPI_Init(NULL, NULL); 
