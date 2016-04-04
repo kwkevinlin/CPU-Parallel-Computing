@@ -28,6 +28,7 @@ int main(int argc, char* argv []) {
 	char* localMotif;		   /* Local buffer for scatter receive */
 	char* localSequences;
 	char* motifs; //Each processor a copy
+	char* sequences;
 	char* matchedMotifs;	   /* Local copy */
 	char* matchedSequences;
 	int* matchedCounter;	   /* Local copy */
@@ -121,11 +122,15 @@ int main(int argc, char* argv []) {
 		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numSequences, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-		//Distribute motifs
-		localMotif = (char *) malloc(sizeof(char) * ((numMotifs/comm_sz) * motifsLength + 1));
-		MPI_Scatter(motifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, localMotif, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+		//Distribute sequences
+		localSequences = (char *) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		MPI_Scatter(sequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, localSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+		/*
+			Checkpoint 2
+		*/
 		
-		//Broadcast whole sequence
+		//Broadcast copy of complete motifs
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
@@ -213,8 +218,8 @@ int main(int argc, char* argv []) {
 		MPI_Bcast(&numSequences, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 		//Receive motifs
-		localMotif = (char *) malloc(sizeof(char) * ((numMotifs/comm_sz) * motifsLength + 1));
-		MPI_Scatter(NULL, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, localMotif, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+		localSequences = (char *) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		MPI_Scatter(NULL, (numSequences/comm_sz) * motifsLength, MPI_CHAR, localSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Receive whole sequence
 		sequences = (char *) malloc(sizeof(char) * ((numSequences * motifsLength) + 1));
