@@ -25,12 +25,9 @@ using namespace std;
 int main(int argc, char* argv []) {
 	int comm_sz;               /* Number of processes    */
 	int my_rank;               /* My process rank        */		   
-	char* localSequences; /* Local buffer for scatter receive */
-	char* motifs; //Each processor a copy
-	//char* matchedSequences;
+	char* localSequences; 	   /* Local buffer for scatter receive */
+	char* motifs;              /* Each processor a copy */
 	int* matchedCounter;	   /* Local copy */
-	int mtchMotifsIndex = 0;   /* Local copy */
-	int mtchCounterIndex = 0; /* Local copy */
 	int motifsLength;		   /* Local copy */
 	int numMotifs;			   /* Local copy */
 	int numSequences;		   /* Local copy */
@@ -58,13 +55,13 @@ int main(int argc, char* argv []) {
 		// ifstream inSequence(argv[2]);
 		// ofstream output(argv[3]);
 
-		ifstream inMotif("motifsSmall.txt");
-		ifstream inSequence("sequencesSmall.txt");
-		ofstream output("outputSmall.txt");
+		// ifstream inMotif("motifsSmall.txt");
+		// ifstream inSequence("sequencesSmall.txt");
+		// ofstream output("outputSmall.txt");
 
-		// ifstream inMotif("motifsMedium.txt");
-		// ifstream inSequence("sequencesMedium.txt");
-		// ofstream output("outputMedium.txt");
+		ifstream inMotif("motifsMedium.txt");
+		ifstream inSequence("sequencesMedium.txt");
+		ofstream output("outputMedium.txt");
 
 		// ifstream inMotif("motifsLarge.txt");
 		// ifstream inSequence("sequencesLarge.txt");
@@ -108,10 +105,6 @@ int main(int argc, char* argv []) {
 		inMotif.close();
 		inSequence.close();
 
-		/*
-			Checkpoint 1
-		*/
-
 		tic();
 
 		//Broadcast motifsLength, numMotifs, numSequence
@@ -122,33 +115,16 @@ int main(int argc, char* argv []) {
 		//Distribute sequences
 		localSequences = (char *) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
 		MPI_Scatter(sequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, localSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-		/*
-			Checkpoint 2
-		*/
 		
 		//Broadcast copy of complete motifs
 		MPI_Bcast(motifs, (numMotifs * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-		//Two arrays to mimick hash table
-		//matchedSequences = (char*) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		//Array to keep track of motif match counts
 		matchedCounter = (int*) malloc(sizeof(int) * numMotifs);
-		//memset(matchedSequences, '\0', sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
 		memset(matchedCounter, 0, sizeof(int) * numMotifs);
-
-		/*
-			Checkpoint 3
-				Note: Algorithm issue. Need to store matched MOTIFS, not SEQUENCES.
-				Possible idea. Since 0 will have all motifs, just sum all counter
-		*/
 
 		//Compare algorithm
 		for (int i = 0; i < numSequences/comm_sz; i++) {
-			//Add every sequence to hash once
-			// for (int y = 0; y < motifsLength; y++) {
-		 // 		matchedSequences[mtchMotifsIndex] = localSequences[i * motifsLength + y]; //Store this motif to matchedMotifs
-		 // 		mtchMotifsIndex++;
-			// }
 			for (int j = 0; j < numMotifs; j++) { //Compare to every motif
 
 				//For each character
@@ -166,39 +142,21 @@ int main(int argc, char* argv []) {
 				}
 
 			}
-			//mtchCounterIndex++; //Increment for count
 		}
-
-		/*
-			Breakpoint 4
-		*/
-
-		//Receive results from all other processes
-		//Matched sequences
-		//memset(sequences, '\0', sizeof(char) * ((numSequences * motifsLength) + 1)); //Store retrieve in sequences
-		//MPI_Gather(matchedSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, sequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
-		//Number of matches for each matched sequence (above)
 
 		int* histoCounter = (int*) malloc(sizeof(int) * (comm_sz * numMotifs + 1));
 		memset(histoCounter, 0, sizeof(int) * (comm_sz * numMotifs + 1)); 
 		MPI_Gather(matchedCounter, numMotifs, MPI_INT, histoCounter, numMotifs, MPI_INT, 0, MPI_COMM_WORLD);
 
 		//Combine results of histoCounter, which is composed of comm_sz amounts of matchedCounter arrays linearly
-		for (int i = motifsLength; i < comm_sz * numMotifs; i++) {
+		for (int i = numMotifs; i < comm_sz * numMotifs; i++) {
 			histoCounter[i % numMotifs] = histoCounter[i % numMotifs] + histoCounter[i];
-			cout << "i: " << i << " -> " << histoCounter[i] << " .. " << histoCounter[i % numMotifs] << endl;
 		}
-
-		/*
-			Breapoint 5
-				Notice memset histoCounter above if histo counts aren't correct
-		*/
 
 		toc();
 
 		//Output to ofstream file
 		int index = 0;
-		cout << strlen(motifs) / motifsLength << endl;
 		output << strlen(motifs) / motifsLength << endl;
 		for (int i = 0; i <= strlen(motifs); i++) {
 			if (i % motifsLength == 0 && i != 0) {
@@ -209,7 +167,6 @@ int main(int argc, char* argv []) {
 				output << motifs[i];
 			}
 		}
-		cout << index << endl;
 
 		output.close();
 
@@ -233,19 +190,12 @@ int main(int argc, char* argv []) {
 		motifs = (char *) malloc(sizeof(char) * ((numMotifs * motifsLength) + 1));
 		MPI_Bcast(motifs, (numMotifs * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-		//Two arrays to mimick hash table
-		//matchedSequences = (char*) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		//Array to keep track of motif match counts
 		matchedCounter = (int*) malloc(sizeof(int) * numMotifs);
-		//memset(matchedSequences, '\0', sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
 		memset(matchedCounter, 0, sizeof(int) * numMotifs);
 
 		//Compare algorithm
 		for (int i = 0; i < numSequences/comm_sz; i++) {
-			//Add motif to "map" once
-			// for (int y = 0; y < motifsLength; y++) {
-		 // 		matchedSequences[mtchMotifsIndex] = localSequences[i * motifsLength + y]; //Store this motif to matchedMotifs
-		 // 		mtchMotifsIndex++;
-			// }
 			for (int j = 0; j < numMotifs; j++) { //For every motif
 
 				//For each character in motif
@@ -262,18 +212,15 @@ int main(int argc, char* argv []) {
 					isMatch = 1;
 				}
 			}
-			//mtchCounterIndex++; //Increment for count
 		}
 
 		//Send results back to Process 0
-		//MPI_Gather(matchedSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, NULL, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 		MPI_Gather(matchedCounter, numMotifs, MPI_INT, NULL, numMotifs, MPI_INT, 0, MPI_COMM_WORLD);
 
 	}
 
 	//Freeing mallocs
 	free(localSequences);
-	//free(matchedSequences);
 	free(matchedCounter);
 	free(motifs);
 
