@@ -112,7 +112,7 @@ int main(int argc, char* argv []) {
 		inSequence.close();
 
 		/*
-			So far so good, above
+			Checkpoint 1
 		*/
 
 		tic();
@@ -134,10 +134,14 @@ int main(int argc, char* argv []) {
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
-		matchedMotifs = (char*) malloc(sizeof(char) * ((numMotifs/comm_sz) * motifsLength + 1));
-		matchedCounter = (int*) malloc(sizeof(int) * numMotifs/comm_sz);
-		memset(matchedMotifs, '\0', sizeof(char) * ((numMotifs/comm_sz) * motifsLength + 1));
-		memset(matchedCounter, 0, sizeof(int) * (numMotifs/comm_sz));
+		matchedSequences = (char*) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		matchedCounter = (int*) malloc(sizeof(int) * numSequences/comm_sz);
+		memset(matchedSequences, '\0', sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		memset(matchedCounter, 0, sizeof(int) * (numSequences/comm_sz));
+
+		/*
+			Checkpoint 3
+		*/
 
 		//Compare algorithm
 		for (int i = 0; i < numMotifs/comm_sz; i++) {
@@ -226,10 +230,10 @@ int main(int argc, char* argv []) {
 		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
-		matchedMotifs = (char*) malloc(sizeof(char) * ((numMotifs/comm_sz) * motifsLength + 1));
-		matchedCounter = (int*) malloc(sizeof(int) * (numMotifs/comm_sz));
-		memset(matchedMotifs, '\0', sizeof(char) * ((numMotifs/comm_sz) * motifsLength + 1));
-		memset(matchedCounter, 0, sizeof(int) * (numMotifs/comm_sz));
+		matchedSequences = (char*) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		matchedCounter = (int*) malloc(sizeof(int) * (numSequences/comm_sz));
+		memset(matchedSequences, '\0', sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
+		memset(matchedCounter, 0, sizeof(int) * (numSequences/comm_sz));
 
 		//Compare algorithm
 		for (int i = 0; i < numMotifs/comm_sz; i++) {
