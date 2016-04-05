@@ -144,18 +144,18 @@ int main(int argc, char* argv []) {
 		*/
 
 		//Compare algorithm
-		for (int i = 0; i < numMotifs/comm_sz; i++) {
-			//Add motif to "map" once
+		for (int i = 0; i < numSequences/comm_sz; i++) {
+			//Add every sequence to hash once
 			for (int y = 0; y < motifsLength; y++) {
-		 		matchedMotifs[mtchMotifsIndex] = localMotif[i * motifsLength + y]; //Store this motif to matchedMotifs
+		 		matchedSequences[mtchMotifsIndex] = localSequences[i * motifsLength + y]; //Store this motif to matchedMotifs
 		 		mtchMotifsIndex++;
 			}
 			mtchCounterIndex++; //Increment for count
-			for (int j = 0; j < numSequences; j++) { //numSequences/comm_sz
+			for (int j = 0; j < numMotifs; j++) { //Compare to every motif
 
-				//For each character in motif
+				//For each character
 				for (int k = 0; k < motifsLength; k++) {
-					if (localMotif[i * motifsLength + k] != sequences[j * motifsLength + k] && localMotif[i * motifsLength + k] != 'X') {
+					if (localSequences[i * motifsLength + k] != motifs[j * motifsLength + k] && motifs[j * motifsLength + k] != 'X') { //i -> j
 						isMatch = 0;
 						break;
 					}
@@ -169,6 +169,10 @@ int main(int argc, char* argv []) {
 
 			}
 		}
+
+		/*
+			Breakpoint 4
+		*/
 
 		//Receive results from all other processes
 		//Matched Motifs
@@ -236,18 +240,18 @@ int main(int argc, char* argv []) {
 		memset(matchedCounter, 0, sizeof(int) * (numSequences/comm_sz));
 
 		//Compare algorithm
-		for (int i = 0; i < numMotifs/comm_sz; i++) {
+		for (int i = 0; i < numSequences/comm_sz; i++) {
 			//Add motif to "map" once
 			for (int y = 0; y < motifsLength; y++) {
-		 		matchedMotifs[mtchMotifsIndex] = localMotif[i * motifsLength + y]; //Store this motif to matchedMotifs
+		 		matchedSequences[mtchMotifsIndex] = localSequences[i * motifsLength + y]; //Store this motif to matchedMotifs
 		 		mtchMotifsIndex++;
 			}
 			mtchCounterIndex++; //Increment for count
-			for (int j = 0; j < numSequences; j++) { //numSequences/comm_sz
+			for (int j = 0; j < numMotifs; j++) { //For every motif
 
 				//For each character in motif
 				for (int k = 0; k < motifsLength; k++) {
-					if (localMotif[i * motifsLength + k] != sequences[j * motifsLength + k] && localMotif[i * motifsLength + k] != 'X') {
+					if (localSequences[i * motifsLength + k] != motifs[j * motifsLength + k] && motifs[j * motifsLength + k] != 'X') { // i -> j
 						isMatch = 0;
 						break;
 					}
