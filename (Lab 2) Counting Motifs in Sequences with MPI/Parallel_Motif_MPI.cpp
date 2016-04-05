@@ -161,7 +161,7 @@ int main(int argc, char* argv []) {
 		MPI_Gather(matchedMotifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, motifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 		//Number of matches for each matched motifs (above)
 		int* histoCounter = (int*) malloc(sizeof(int) * (strlen(motifs)/motifsLength + 1));
-		memset(histoCounter, 0, sizeof(int)*(numMotifs/comm_sz));
+		memset(histoCounter, 0, sizeof(int) * (strlen(motifs)/motifsLength + 1));
 		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, histoCounter, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
 
 		toc();
