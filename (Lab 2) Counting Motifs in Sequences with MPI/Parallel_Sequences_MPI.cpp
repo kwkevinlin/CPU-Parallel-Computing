@@ -175,13 +175,18 @@ int main(int argc, char* argv []) {
 		*/
 
 		//Receive results from all other processes
-		//Matched Motifs
-		memset(motifs, '\0', sizeof(char) * ((numMotifs * motifsLength) + 1)); //Store retrieve in motifs
-		MPI_Gather(matchedMotifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, motifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
-		//Number of matches for each matched motifs (above)
-		int* histoCounter = (int*) malloc(sizeof(int) * (strlen(motifs)/motifsLength + 1));
-		memset(histoCounter, 0, sizeof(int)*(numMotifs/comm_sz));
-		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, histoCounter, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
+		//Matched sequences
+		memset(sequences, '\0', sizeof(char) * ((numSequences * motifsLength) + 1)); //Store retrieve in sequences
+		MPI_Gather(matchedSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, sequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+		//Number of matches for each matched sequence (above)
+		int* histoCounter = (int*) malloc(sizeof(int) * (strlen(sequences)/motifsLength + 1));
+		memset(histoCounter, 0, sizeof(int)*(numSequences/comm_sz)); //This isn't memsetting everything... right?
+		MPI_Gather(matchedCounter, (numSequences/comm_sz), MPI_INT, histoCounter, (numSequences/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
+
+		/*
+			Breapoint 5
+				Notice memset histoCounter above if histo counts aren't correct
+		*/
 
 		toc();
 
@@ -266,8 +271,8 @@ int main(int argc, char* argv []) {
 		}
 
 		//Send results back to Process 0
-		MPI_Gather(matchedMotifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, NULL, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
-		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, NULL, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Gather(matchedSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, NULL, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+		MPI_Gather(matchedCounter, (numSequences/comm_sz), MPI_INT, NULL, (numSequences/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
 
 	}
 
