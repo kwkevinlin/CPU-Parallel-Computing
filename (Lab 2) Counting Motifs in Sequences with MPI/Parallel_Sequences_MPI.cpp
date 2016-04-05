@@ -24,12 +24,9 @@ using namespace std;
 
 int main(int argc, char* argv []) {
 	int comm_sz;               /* Number of processes    */
-	int my_rank;               /* My process rank        */
-	char* localMotif;		   /* Local buffer for scatter receive */
-	char* localSequences;
+	int my_rank;               /* My process rank        */		   
+	char* localSequences; /* Local buffer for scatter receive */
 	char* motifs; //Each processor a copy
-	char* sequences;
-	char* matchedMotifs;	   /* Local copy */
 	char* matchedSequences;
 	int* matchedCounter;	   /* Local copy */
 	int mtchMotifsIndex = 0;   /* Local copy */
@@ -131,7 +128,7 @@ int main(int argc, char* argv []) {
 		*/
 		
 		//Broadcast copy of complete motifs
-		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+		MPI_Bcast(motifs, (numMotifs * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
 		matchedSequences = (char*) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
@@ -206,20 +203,21 @@ int main(int argc, char* argv []) {
 
 		//Output to ofstream file
 		int index = 0;
-		output << strlen(motifs) / motifsLength << endl;
-		for (int i = 0; i <= strlen(motifs); i++) {
+		output << strlen(sequences) / motifsLength << endl;
+		for (int i = 0; i <= strlen(sequences); i++) {
 			if (i % motifsLength == 0 && i != 0) {
 				output << "," << histoCounter[index] << endl;
 				index++;
 			}
-			if (i != strlen(motifs)) {
-				output << motifs[i];
+			if (i != strlen(sequences)) {
+				output << sequences[i];
 			}
 		}
 
 		output.close();
 
 		free(histoCounter);
+		free(sequences);
 
 		cout << "Elapsed Time: " << etime() << endl;
 
@@ -230,13 +228,13 @@ int main(int argc, char* argv []) {
 		MPI_Bcast(&numMotifs, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&numSequences, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-		//Receive motifs
+		//Receive localSequences
 		localSequences = (char *) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
 		MPI_Scatter(NULL, (numSequences/comm_sz) * motifsLength, MPI_CHAR, localSequences, (numSequences/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-		//Receive whole sequence
-		sequences = (char *) malloc(sizeof(char) * ((numSequences * motifsLength) + 1));
-		MPI_Bcast(sequences, (numSequences * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+		//Receive whole motifs
+		motifs = (char *) malloc(sizeof(char) * ((numMotifs * motifsLength) + 1));
+		MPI_Bcast(motifs, (numMotifs * motifsLength) + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		//Two arrays to mimick hash table
 		matchedSequences = (char*) malloc(sizeof(char) * ((numSequences/comm_sz) * motifsLength + 1));
@@ -277,10 +275,10 @@ int main(int argc, char* argv []) {
 	}
 
 	//Freeing mallocs
-	free(localMotif);
-	free(matchedMotifs);
+	free(localSequences);
+	free(matchedSequences);
 	free(matchedCounter);
-	free(sequences);
+	free(motifs);
 
 	/* Shut down MPI */
 	MPI_Finalize(); 
