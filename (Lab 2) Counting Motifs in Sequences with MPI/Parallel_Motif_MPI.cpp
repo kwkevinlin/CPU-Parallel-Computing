@@ -16,25 +16,30 @@
 			Fair share of motifs
 			Complete sequence of sequences
 
-	Processor 0 responsible input/output
-		And distribution of data
+	Note:
+		Step 3, Parallel_Sequences_MPI.cpp is a 
+		better optimized version of this problem.
+
+	Processor 0 responsible for:
+		Input/Output
+		MPI distribution of data
 */
 
 using namespace std;
 
 int main(int argc, char* argv []) {
-	int comm_sz;               /* Number of processes */
-	int my_rank;               /* My process rank */
-	char* localMotif;	   /* Local buffer for scatter receive */
-	char* sequences;	   /* Local whole sequences array */
+	int comm_sz;               /* Number of processes    */
+	int my_rank;               /* My process rank        */
+	char* localMotif;		   /* Local buffer for scatter receive */
+	char* sequences;		   /* Local whole sequences array */
 	char* matchedMotifs;	   /* Local copy */
 	int* matchedCounter;	   /* Local copy */
 	int mtchMotifsIndex = 0;   /* Local copy */
 	int mtchCounterIndex = -1; /* Local copy */
-	int motifsLength;	   /* Local copy */
-	int numMotifs;		   /* Local copy */
-	int numSequences;          /* Local copy */
-	int isMatch = 1;           /* Local copy */
+	int motifsLength;		   /* Local copy */
+	int numMotifs;			   /* Local copy */
+	int numSequences;		   /* Local copy */
+	int isMatch = 1;		   /* Local copy */
 
 	/* Start up MPI */
 	MPI_Init(NULL, NULL); 
@@ -159,9 +164,10 @@ int main(int argc, char* argv []) {
 		//Matched Motifs
 		memset(motifs, '\0', sizeof(char) * ((numMotifs * motifsLength) + 1)); //Store retrieve in motifs
 		MPI_Gather(matchedMotifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, motifs, (numMotifs/comm_sz) * motifsLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+		
 		//Number of matches for each matched motifs (above)
 		int* histoCounter = (int*) malloc(sizeof(int) * (strlen(motifs)/motifsLength + 1));
-		memset(histoCounter, 0, sizeof(int) * (strlen(motifs)/motifsLength + 1));
+		memset(histoCounter, 0, sizeof(int)*(strlen(motifs)/motifsLength + 1));
 		MPI_Gather(matchedCounter, (numMotifs/comm_sz), MPI_INT, histoCounter, (numMotifs/comm_sz), MPI_INT, 0, MPI_COMM_WORLD);
 
 		toc();
@@ -198,6 +204,7 @@ int main(int argc, char* argv []) {
 		free(histoCounter);
 
 		cout << "Elapsed Time: " << etime() << endl;
+		//cout << etime() << endl;
 
 	} else { //Other processes
 
