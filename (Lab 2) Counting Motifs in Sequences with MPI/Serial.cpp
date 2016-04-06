@@ -2,35 +2,38 @@
 #include <cstdlib>
 #include <fstream>
 #include <unordered_map>
-//#include "etime.h"
+#include "etime.h"
 
 using namespace std;
 
 /*
 	Currently compiling via:
-	g++ -o main sequential.cpp etime.c -std=c++0x
+	g++ -o serial serial.cpp etime.c -std=c++0x
 
  */
 
 int main(int argc, char* argv[]) {
 
-//	if (argc != 4) {
-//		cout << "Incorrect number of arguments. Terminating.\n";
-//		exit(-1);
-//	}
-//
-//	ifstream inMotif(argv[1]);
-//	ifstream inSequence(argv[2]);
-//	ofstream output(argv[3]);
+	if (argc != 4) {
+		cout << "Incorrect number of arguments. Terminating.\n";
+		exit(-1);
+	}
 
-	ifstream inMotif("motifsSmall.txt");
-	ifstream inSequence("sequencesSmall.txt");
-	ofstream output("outputSmall.txt");
+	ifstream inMotif(argv[1]);
+	ifstream inSequence(argv[2]);
+	ofstream output(argv[3]);
+
+//	ifstream inMotif("motifsSmall.txt");
+//	ifstream inSequence("sequencesSmall.txt");
+//	ofstream output("outputSmall.txt");
+
+//	ifstream inMotif("motifsMedium.txt");
+//	ifstream inSequence("sequencesMedium.txt");
+//	ofstream output("outputMedium.txt");
 
 
 	string n;
-	string motifsLength;
-	int numMotifs, numSequences, index = 0;
+	int numMotifs, numSequences, motifsLength, index = 0;
 
 	//Reading in motifs
 	inMotif >> numMotifs >> motifsLength;
@@ -43,10 +46,6 @@ int main(int argc, char* argv[]) {
 	//Reading in sequences
 	inSequence >> numSequences >> n;
 	string *sequences = new string[numSequences];
-	if (motifsLength != n) {
-		cout << "Number of characters do not match!\n";
-		exit(-1);
-	}
 	index = 0;
 	while (inSequence >> n) {
 		sequences[index] = n;
@@ -62,17 +61,17 @@ int main(int argc, char* argv[]) {
 //	} cout << endl << endl;
 
 	int isMatch = 1;
-	int *histoCounter = new int[numMotifs]();
+	int *histoCounter = new int[numMotifs];
 
-	//tic();
+	tic();
 
 	//Brute force method
 	for (int i = 0; i < numMotifs; i++) { //For every motif string
-		cout << "MotifsLoop: " << i << endl;
+		histoCounter[i] = 0;
 		for (int j = 0; j < numSequences; j++) { //For every sequence string
 
 			//Compare character by character
-			for (int k = 0; k < numMotifs; k++) {
+			for (int k = 0; k < motifsLength; k++) {
 
 				if (motifs[i][k] != sequences[j][k] && motifs[i][k] != 'X') {
 					isMatch = 0;
@@ -89,15 +88,15 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	//toc();
+	toc();
 
-	//cout << endl << matchedMotifs.size() << endl;
 	output << numMotifs << endl;
 	for (int i = 0; i < numMotifs; i++) {
 		output << motifs[i] << "," << histoCounter[i] << endl;
 	}
 
-	//cout << "\nTime: " << etime() << endl;
+	cout << "Time: " << etime() << endl;
+	//cout << etime() << endl;
 
 	inMotif.close();
 	inSequence.close();
