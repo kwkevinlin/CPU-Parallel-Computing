@@ -44,24 +44,24 @@ int main(int argc, char* argv []) {
 
 	if (my_rank == 0) {
 
-		// if (argc != 4) {
-		// 	if (my_rank == 0) { //Only Processor 0 printout, but all terminate
-		// 		cout << "Incorrect number of arguments. Terminating.\n";
-		// 	}
-		// 	exit(-1);
-		// }
+		if (argc != 4) {
+			if (my_rank == 0) { //Only Processor 0 printout, but all terminate
+				cout << "Incorrect number of arguments. Terminating.\n";
+			}
+			exit(-1);
+		}
 
-		// ifstream inMotif(argv[1]);
-		// ifstream inSequence(argv[2]);
-		// ofstream output(argv[3]);
+		ifstream inMotif(argv[1]);
+		ifstream inSequence(argv[2]);
+		ofstream output(argv[3]);
 
 		// ifstream inMotif("motifsSmall.txt");
 		// ifstream inSequence("sequencesSmall.txt");
 		// ofstream output("outputSmall.txt");
 
-		ifstream inMotif("motifsMedium.txt");
-		ifstream inSequence("sequencesMedium.txt");
-		ofstream output("outputMedium.txt");
+		// ifstream inMotif("motifsMedium.txt");
+		// ifstream inSequence("sequencesMedium.txt");
+		// ofstream output("outputMedium.txt");
 
 		// ifstream inMotif("motifsLarge.txt");
 		// ifstream inSequence("sequencesLarge.txt");
@@ -174,6 +174,7 @@ int main(int argc, char* argv []) {
 		free(sequences);
 
 		cout << "Elapsed Time: " << etime() << endl;
+		//cout << etime() << endl;
 
 	} else { //Other processes
 
