@@ -1,7 +1,7 @@
 # CPU-Parallel-Computing
 CPU-based parallel computing codes in C/C++ | CSC346 Coursework and Labs
 
-For GPU parallel programming in CUDA, see [GPU-Parallel-Computing](https://github.com/kwkevinlin/CUDA-Parallel-Computing).
+_For GPU parallel programming in CUDA, see [GPU-Parallel-Computing](https://github.com/kwkevinlin/CUDA-Parallel-Computing)._
 
 #### Table of Contents
   
