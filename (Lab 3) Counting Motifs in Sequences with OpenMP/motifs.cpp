@@ -8,26 +8,26 @@ using namespace std;
 
 /*
 	Compile via:
-		g++ -g -fopenmp -o motifs motifs.cpp
+		g++ -g -fopenmp -o motifs motifs.cpp etime.c -std=c++0x
 
 	Execute via:
-		. /motifs (int)numThreads
+		. /motifs numOfThreads(Int) motifsFile.txt sequencesFile.txt outputFile.txt
  */
 
 int main(int argc, char* argv[]) {
 
-	// if (argc != 5) {
-	// 	cout << "Incorrect number of arguments. Terminating.\n";
-	// 	exit(-1);
-	// }
+	if (argc != 5) {
+		cout << "Incorrect number of arguments. Terminating.\n";
+		exit(-1);
+	}
 
-	// ifstream inMotif(argv[2]);
-	// ifstream inSequence(argv[3]);
-	// ofstream output(argv[4]);
+	ifstream inMotif(argv[2]);
+	ifstream inSequence(argv[3]);
+	ofstream output(argv[4]);
 
-	ifstream inMotif("motifsSmall.txt");
-	ifstream inSequence("sequencesSmall.txt");
-	ofstream output("outputSmall.txt");
+	// ifstream inMotif("motifsSmall.txt");
+	// ifstream inSequence("sequencesSmall.txt");
+	// ofstream output("outputSmall.txt");
 
 	// ifstream inMotif("motifsMedium.txt");
 	// ifstream inSequence("sequencesMedium.txt");
@@ -67,18 +67,14 @@ int main(int argc, char* argv[]) {
 	tic();
 
 	/*
-		Notes: reduction(+: varReduction) after pragma
+		Notes: Look into reduction(+: varReduction)
 		histoCounter array can be reduced
-		Probably dont need pragma critical
 	*/
 
 	//OpenMP
-	# pragma omp parallel for num_threads (thread_count)
-
-	//Brute force method
+	# pragma omp parallel for num_threads(thread_count)
 	for (int i = 0; i < numMotifs; i++) { //For every motif string
 		int isMatch = 1; //Private for each thread
-		# pragma omp critical
 		histoCounter[i] = 0;
 		for (int j = 0; j < numSequences; j++) { //For every sequence string
 
@@ -93,7 +89,6 @@ int main(int argc, char* argv[]) {
 
 			if (isMatch == 1) {
 				//Critical section
-				# pragma omp critical
 				histoCounter[i]++;
 			} else {
 				isMatch = 1;
