@@ -9,6 +9,7 @@ using namespace std;
 /*
 	Compile via:
 		g++ -g -fopenmp -o motifs motifs.cpp etime.c -std=c++0x
+		-std+c++0x for stoi()
 
 	Execute via:
 		. /motifs numOfThreads(Int) motifsFile.txt sequencesFile.txt outputFile.txt
@@ -88,7 +89,6 @@ int main(int argc, char* argv[]) {
 			}
 
 			if (isMatch == 1) {
-				//Critical section
 				histoCounter[i]++;
 			} else {
 				isMatch = 1;
