@@ -83,22 +83,18 @@ int main(int argc, char* argv[]) {
 	//OpenMP
 	# pragma omp parallel for num_threads(thread_count)
 	for (int i = 0; i < numSequences; i++) { //For every sequence
-
-	}
-
-
-	for (int i = 0; i < numMotifs; i++) { //For every motif string
 		int isMatch = 1; //Private for each thread
 		histoCounter[i] = 0;
-		for (int j = 0; j < numSequences; j++) { //For every sequence string
-
+		for (int j = 0; j < numMotifs; j++) { //For every motif
+		
 			//Compare character by character
 			for (int k = 0; k < motifsLength; k++) {
 
-				if (motifs[i][k] != sequences[j][k] && motifs[i][k] != 'X') {
+				if (sequences[i][k] != motifs[j][k] && motifs[j][k] != 'X') {
 					isMatch = 0;
 					break;
 				}
+
 			}
 
 			if (isMatch == 1) {
@@ -106,7 +102,6 @@ int main(int argc, char* argv[]) {
 			} else {
 				isMatch = 1;
 			}
-
 		}
 	}
 
