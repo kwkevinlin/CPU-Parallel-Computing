@@ -12,6 +12,8 @@ using namespace std;
 	    sequences among available threads. So every thread has access to all motifs,
 	    but segmented sequences.
 
+	    Using default scheduling in OpenMP.
+
 	Compile via:
 		g++ -g -fopenmp -o motifs motifs.cpp etime.c -std=c++0x
 		-std+c++0x for stoi()
@@ -80,6 +82,11 @@ int main(int argc, char* argv[]) {
 
 	//OpenMP
 	# pragma omp parallel for num_threads(thread_count)
+	for (int i = 0; i < numSequences; i++) { //For every sequence
+
+	}
+
+
 	for (int i = 0; i < numMotifs; i++) { //For every motif string
 		int isMatch = 1; //Private for each thread
 		histoCounter[i] = 0;
