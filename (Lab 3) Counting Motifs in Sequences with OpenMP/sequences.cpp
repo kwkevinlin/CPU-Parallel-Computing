@@ -84,9 +84,12 @@ int main(int argc, char* argv[]) {
 	# pragma omp parallel for num_threads(thread_count)
 	for (int i = 0; i < numSequences; i++) { //For every sequence
 		int isMatch = 1; //Private for each thread
-		histoCounter[i] = 0;
 		for (int j = 0; j < numMotifs; j++) { //For every motif
-		
+
+			if (i == 0) { //Reset histoCounter if the first time accessing it
+				histoCounter[j] = 0;
+			}
+
 			//Compare character by character
 			for (int k = 0; k < motifsLength; k++) {
 
@@ -98,7 +101,7 @@ int main(int argc, char* argv[]) {
 			}
 
 			if (isMatch == 1) {
-				histoCounter[i]++;
+				histoCounter[j]++;
 			} else {
 				isMatch = 1;
 			}
