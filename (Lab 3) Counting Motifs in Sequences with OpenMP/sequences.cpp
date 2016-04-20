@@ -15,11 +15,11 @@ using namespace std;
 	    Using default scheduling in OpenMP.
 
 	Compile via:
-		g++ -g -fopenmp -o motifs motifs.cpp etime.c -std=c++0x
+		g++ -g -fopenmp -o sequences sequences.cpp etime.c -std=c++0x
 		-std+c++0x for stoi()
 
 	Execute via:
-		. /motifs numOfThreads(Int) motifsFile.txt sequencesFile.txt outputFile.txt
+		. /sequences numOfThreads(Int) motifsFile.txt sequencesFile.txt outputFile.txt
 
  */
 
@@ -77,7 +77,6 @@ int main(int argc, char* argv[]) {
 
 	/*
 		Notes: Look into reduction(+: varReduction)
-		histoCounter array can be reduced
 	*/
 
 	//OpenMP
