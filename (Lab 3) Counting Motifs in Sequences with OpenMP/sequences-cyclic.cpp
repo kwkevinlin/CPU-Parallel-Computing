@@ -12,14 +12,14 @@ using namespace std;
 	    sequences among available threads. So every thread has access to all motifs,
 	    but segmented sequences.
 
-	    Using auto scheduling in OpenMP. Result is the slowest so far.
+	    Using cyclic (static, c) scheduling in OpenMP.
 
 	Compile via:
-		g++ -g -fopenmp -o sequences-auto sequences-auto.cpp etime.c -std=c++0x
+		g++ -g -fopenmp -o sequences-cyclic sequences-cyclic.cpp etime.c -std=c++0x
 		-std+c++0x for stoi()
 
 	Execute via:
-		. /sequences-auto numOfThreads(Int) motifsFile.txt sequencesFile.txt outputFile.txt
+		. /sequences-cyclic numOfThreads(Int) motifsFile.txt sequencesFile.txt outputFile.txt
 
  */
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 	*/
 
 	//OpenMP
-	# pragma omp parallel for num_threads(thread_count) schedule(auto)
+	# pragma omp parallel for num_threads(thread_count) schedule(static, 1)
 	for (int i = 0; i < numSequences; i++) { //For every sequence
 		int isMatch = 1; //Private for each thread
 		for (int j = 0; j < numMotifs; j++) { //For every motif
