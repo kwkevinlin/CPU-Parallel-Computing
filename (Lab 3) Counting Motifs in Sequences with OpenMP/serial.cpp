@@ -11,7 +11,7 @@ using namespace std;
 	    g++ -o serial serial.cpp etime.c -std=c++0x
 
 	To execute:
-		./serial numThreads motifsFile.txt sequencesFile.txt outputFile.txt
+		./serial motifsFile.txt sequencesFile.txt outputFile.txt
  */
 
 int main(int argc, char* argv[]) {
